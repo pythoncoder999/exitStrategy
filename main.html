@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>5-Step Buy Averaging Plan</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="number"], input[type="text"] {
+      width: 150px;
+      margin-bottom: 10px;
+    }
+    .buy-step {
+      background: #fff;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+    }
+    .exit-plan {
+      margin-top: 20px;
+      background: #e8ffe8;
+      padding: 10px;
+      border: 1px solid #6c6;
+    }
+    button {
+      padding: 10px 15px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📈 5-Step Buy Averaging Plan</h1>
+
+  <label>Total Capital ($): </label>
+  <input type="number" id="capital" value="1000" /><br>
+
+  <label>Starting Price ($): </label>
+  <input type="number" id="startPrice" value="10" /><br>
+
+  <label>% Increase per Buy: </label>
+  <input type="number" id="percentStep" value="10" /><br>
+
+  <button onclick="generatePlan()">Generate Plan</button>
+
+  <div id="buyPlan"></div>
+
+  <div class="exit-plan">
+    <h3>🚪 Exit Strategy</h3>
+    <label>Target Exit Price ($): </label>
+    <input type="number" id="exitPrice" placeholder="e.g. 15" /><br>
+
+    <label>Notes / Conditions: </label><br>
+    <textarea rows="4" cols="50" placeholder="e.g. Exit if price reaches target or momentum slows."></textarea>
+  </div>
+
+  <script>
+    function generatePlan() {
+      const capital = parseFloat(document.getElementById("capital").value);
+      const startPrice = parseFloat(document.getElementById("startPrice").value);
+      const percentStep = parseFloat(document.getElementById("percentStep").value);
+      const stepCapital = (capital / 5).toFixed(2);
+      let planHTML = '';
+
+      for (let i = 0; i < 5; i++) {
+        const price = (startPrice * Math.pow(1 + percentStep / 100, i)).toFixed(2);
+        planHTML += `
+          <div class="buy-step">
+            <input type="checkbox" id="buy${i + 1}" />
+            <label for="buy${i + 1}">Buy #${i + 1}</label><br>
+            Target Price: $<strong>${price}</strong><br>
+            Capital to Use: $<strong>${stepCapital}</strong>
+          </div>
+        `;
+      }
+
+      document.getElementById("buyPlan").innerHTML = planHTML;
+    }
+  </script>
+
+</body>
+</html>
