@@ -3,199 +3,146 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Advanced Buy Plan Tracker</title>
+  <title>Averaging Up Planner · Live Sync</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f0f2f5;
-    }
-    h1 { color: #333; }
-    label { font-weight: bold; }
-    input, textarea {
-      width: 200px;
-      margin: 5px 0;
-      padding: 5px;
-    }
-    .buy-step {
-      background: #fff;
-      padding: 10px;
-      margin-top: 10px;
-      border: 1px solid #ccc;
-    }
-    .exit-plan, .controls {
-      margin-top: 20px;
-      background: #e8f8e8;
-      padding: 10px;
-      border: 1px solid #6c6;
-    }
-    button {
-      padding: 10px 15px;
-      margin: 5px;
-      cursor: pointer;
+    body { font-family: Arial, sans-serif; margin: 10px; background: #f7f7f7; }
+    h1 { text-align: center; color: #333; }
+    .controls, .exit-plan, .plan { max-width: 600px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; }
+    input, button, textarea { width: 100%; margin: 6px 0; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+    .buy-step { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; flex-direction: column; }
+    .buy-step:last-child { border: none; }
+    @media (min-width: 500px) {
+      .buy-step { flex-direction: row; align-items: center; justify-content: space-between; }
+      .buy-step > div { flex: 1; }
     }
   </style>
 </head>
 <body>
 
-<h1>📈 Buy Averaging Planner with Stop Loss & Export</h1>
+<h1>📈 Live Averaging‑Up Planner</h1>
 
-<div>
-  <label>Total Capital ($): </label>
-  <input type="number" id="capital" value="1000"><br>
-
-  <label>Start Price ($): </label>
-  <input type="number" id="startPrice" value="10"><br>
-
-  <label>% Increase Per Buy: </label>
-  <input type="number" id="percentStep" value="10"><br>
-
-  <label>Stop Loss (%): </label>
-  <input type="number" id="stopLoss" value="5"><br>
-
+<div class="controls">
+  <input type="text" id="symbol" placeholder="Asset symbol (e.g. BTC, AAPL)" />
+  <input type="number" id="capital" placeholder="Total Capital ($)" value="1000" />
+  <input type="number" id="startPrice" placeholder="Start Price ($)" value="10" />
+  <input type="number" id="percentStep" placeholder="% Increase / Buy" value="10" />
+  <input type="number" id="stopLoss" placeholder="Stop Loss (%)" value="5" />
   <button onclick="generatePlan()">Generate Plan</button>
 </div>
 
-<div id="buyPlan"></div>
+<div class="plan" id="buyPlan"></div>
 
 <div class="exit-plan">
-  <h3>🚪 Exit Strategy</h3>
-  <label>Target Exit Price ($): </label>
-  <input type="number" id="exitPrice" placeholder="e.g. 15"><br>
-
-  <label>Exit Notes: </label><br>
-  <textarea id="exitNotes" rows="4" cols="50" placeholder="E.g. Exit if price exceeds target or volume drops."></textarea>
+  <h3>Exit Strategy</h3>
+  <input type="number" id="exitPrice" placeholder="Target Exit Price ($)" />
+  <textarea id="exitNotes" placeholder="Exit conditions (momentum slowdown, etc.)"></textarea>
 </div>
 
 <div class="controls">
-  <h3>⚙️ Tools</h3>
-  <button onclick="downloadCSV()">💾 Save as CSV</button>
-  <button onclick="loadCSV()">📂 Load Saved</button>
-  <button onclick="generatePDF()">📄 Export as PDF</button>
+  <button onclick="downloadCSV()">💾 Save Plan CSV</button>
+  <button onclick="loadCSV()">📂 Load Saved Plan</button>
+  <button onclick="generatePDF()">📄 Export PDF</button>
 </div>
 
 <script>
-let planData = [];
+  let planData = [];
+  let currentPrice = null;
 
-function generatePlan() {
-  const capital = parseFloat(document.getElementById("capital").value);
-  const startPrice = parseFloat(document.getElementById("startPrice").value);
-  const percentStep = parseFloat(document.getElementById("percentStep").value);
-  const stopLoss = parseFloat(document.getElementById("stopLoss").value);
-  const stepCapital = (capital / 5).toFixed(2);
-
-  const container = document.getElementById("buyPlan");
-  container.innerHTML = "";
-  planData = [];
-
-  for (let i = 0; i < 5; i++) {
-    const price = (startPrice * Math.pow(1 + percentStep / 100, i)).toFixed(2);
-    const stop = (price * (1 - stopLoss / 100)).toFixed(2);
-    const id = `buy${i + 1}`;
-
-    const step = {
-      step: i + 1,
-      targetPrice: price,
-      stopLoss: stop,
-      capital: stepCapital,
-      checked: false
-    };
-
-    planData.push(step);
-
-    container.innerHTML += `
-      <div class="buy-step">
-        <input type="checkbox" id="${id}" onchange="toggleBuy(${i})">
-        <label for="${id}">Buy #${i + 1}</label><br>
-        Target Price: $<strong>${price}</strong><br>
-        Capital: $<strong>${stepCapital}</strong><br>
-        Stop Loss Price: $<strong>${stop}</strong>
-      </div>
-    `;
+  async function fetchPrice(sym) {
+    try {
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${sym.toLowerCase()}&vs_currencies=usd`);
+      const json = await res.json();
+      return json[sym.toLowerCase()]?.usd || null;
+    } catch { return null; }
   }
-}
 
-function toggleBuy(index) {
-  planData[index].checked = document.getElementById(`buy${index + 1}`).checked;
-}
+  async function generatePlan() {
+    const symbol = document.getElementById("symbol").value.trim();
+    const capital = +document.getElementById("capital").value;
+    const start = +document.getElementById("startPrice").value;
+    const pct = +document.getElementById("percentStep").value;
+    const sl = +document.getElementById("stopLoss").value;
+    const stepCap = (capital / 5).toFixed(2);
 
-function downloadCSV() {
-  const csv = Papa.unparse(planData);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "buy_plan.csv";
-  link.click();
-}
+    currentPrice = symbol ? await fetchPrice(symbol) : null;
 
-function loadCSV() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = ".csv";
-  input.onchange = e => {
-    const file = e.target.files[0];
-    Papa.parse(file, {
-      header: true,
-      complete: results => {
-        planData = results.data.map((row, i) => ({
-          ...row,
-          step: parseInt(row.step),
-          capital: parseFloat(row.capital),
-          targetPrice: parseFloat(row.targetPrice),
-          stopLoss: parseFloat(row.stopLoss),
-          checked: row.checked === "true"
-        }));
-        refreshPlanFromData();
-      }
+    planData = [];
+    const container = document.getElementById("buyPlan");
+    container.innerHTML = `<p>Current Price of ${symbol.toUpperCase()}: ${
+      currentPrice ? '$' + currentPrice : 'N/A'
+    }</p>`;
+    for (let i = 0; i < 5; i++) {
+      const tp = +(start * Math.pow(1 + pct / 100, i)).toFixed(2);
+      const sp = +(tp * (1 - sl / 100)).toFixed(2);
+      planData.push({ step: i+1, targetPrice: tp, stopLoss: sp, capital: stepCap, checked: false });
+      container.innerHTML += `
+        <div class="buy-step">
+          <div>
+            <input type="checkbox" id="b${i}" onchange="toggleBuy(${i})">
+            <label for="b${i}">Buy #${i+1}</label>
+          </div>
+          <div>Target: $${tp}</div>
+          <div>Stop‑Loss: $${sp}</div>
+          <div>Capital: $${stepCap}</div>
+        </div>`;
+    }
+  }
+
+  function toggleBuy(i) { planData[i].checked = document.getElementById(`b${i}`).checked; }
+
+  function downloadCSV() {
+    const csv = Papa.unparse(planData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'plan.csv';
+    a.click();
+  }
+
+  function loadCSV() {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.csv';
+    inp.onchange = e => {
+      Papa.parse(e.target.files[0], {
+        header: true,
+        complete: r => {
+          planData = r.data.map((r,i)=>({
+            step: +r.step, targetPrice:+r.targetPrice,
+            stopLoss:+r.stopLoss, capital:+r.capital,
+            checked: r.checked === 'true'
+          }));
+          refresh();
+        }
+      });
+    };
+    inp.click();
+  }
+
+  function refresh() {
+    generatePlan(); // regenerate UI, then restore checkboxes
+    planData.forEach((p,i) => {
+      document.getElementById(`b${i}`).checked = p.checked;
     });
-  };
-  input.click();
-}
+  }
 
-function refreshPlanFromData() {
-  const container = document.getElementById("buyPlan");
-  container.innerHTML = "";
-  planData.forEach((step, i) => {
-    const id = `buy${i + 1}`;
-    container.innerHTML += `
-      <div class="buy-step">
-        <input type="checkbox" id="${id}" ${step.checked ? "checked" : ""} onchange="toggleBuy(${i})">
-        <label for="${id}">Buy #${step.step}</label><br>
-        Target Price: $<strong>${step.targetPrice}</strong><br>
-        Capital: $<strong>${step.capital}</strong><br>
-        Stop Loss Price: $<strong>${step.stopLoss}</strong>
-      </div>
-    `;
-  });
-}
-
-function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFontSize(16);
-  doc.text("Buy Averaging Plan", 10, 10);
-  doc.setFontSize(12);
-
-  planData.forEach((step, i) => {
-    doc.text(
-      `Buy #${step.step}: Price $${step.targetPrice}, Capital $${step.capital}, Stop Loss $${step.stopLoss}, Checked: ${step.checked}`,
-      10,
-      20 + i * 10
-    );
-  });
-
-  const exitPrice = document.getElementById("exitPrice").value;
-  const notes = document.getElementById("exitNotes").value;
-
-  doc.text(`Exit Price: $${exitPrice}`, 10, 80);
-  doc.text("Exit Notes:", 10, 90);
-  doc.text(notes, 10, 100);
-
-  doc.save("Buy_Plan.pdf");
-}
+  function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Averaging‑Up Plan", 10, 10);
+    planData.forEach((p,i) => {
+      doc.setFontSize(12);
+      doc.text(`Buy #${p.step}: target $${p.targetPrice}, stop $${p.stopLoss}, cap $${p.capital}, done: ${p.checked}`, 10, 20 + i * 8);
+    });
+    const exitPrice = +document.getElementById("exitPrice").value;
+    doc.text(`Exit Target: $${exitPrice}`, 10, 70);
+    doc.text("Notes:", 10, 80);
+    doc.setFontSize(10);
+    doc.text(document.getElementById("exitNotes").value || '', 10, 90);
+    doc.save("plan.pdf");
+  }
 </script>
 
 </body>
