@@ -3,22 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>5-Step Buy Averaging Plan</title>
+  <title>Advanced Buy Plan Tracker</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
-      background: #f4f4f4;
+      background: #f0f2f5;
     }
-    h1 {
-      color: #333;
-    }
-    label {
-      font-weight: bold;
-    }
-    input[type="number"], input[type="text"] {
-      width: 150px;
-      margin-bottom: 10px;
+    h1 { color: #333; }
+    label { font-weight: bold; }
+    input, textarea {
+      width: 200px;
+      margin: 5px 0;
+      padding: 5px;
     }
     .buy-step {
       background: #fff;
@@ -26,67 +25,178 @@
       margin-top: 10px;
       border: 1px solid #ccc;
     }
-    .exit-plan {
+    .exit-plan, .controls {
       margin-top: 20px;
-      background: #e8ffe8;
+      background: #e8f8e8;
       padding: 10px;
       border: 1px solid #6c6;
     }
     button {
       padding: 10px 15px;
-      margin-top: 10px;
+      margin: 5px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <h1>📈 5-Step Buy Averaging Plan</h1>
+<h1>📈 Buy Averaging Planner with Stop Loss & Export</h1>
 
+<div>
   <label>Total Capital ($): </label>
-  <input type="number" id="capital" value="1000" /><br>
+  <input type="number" id="capital" value="1000"><br>
 
-  <label>Starting Price ($): </label>
-  <input type="number" id="startPrice" value="10" /><br>
+  <label>Start Price ($): </label>
+  <input type="number" id="startPrice" value="10"><br>
 
-  <label>% Increase per Buy: </label>
-  <input type="number" id="percentStep" value="10" /><br>
+  <label>% Increase Per Buy: </label>
+  <input type="number" id="percentStep" value="10"><br>
+
+  <label>Stop Loss (%): </label>
+  <input type="number" id="stopLoss" value="5"><br>
 
   <button onclick="generatePlan()">Generate Plan</button>
+</div>
 
-  <div id="buyPlan"></div>
+<div id="buyPlan"></div>
 
-  <div class="exit-plan">
-    <h3>🚪 Exit Strategy</h3>
-    <label>Target Exit Price ($): </label>
-    <input type="number" id="exitPrice" placeholder="e.g. 15" /><br>
+<div class="exit-plan">
+  <h3>🚪 Exit Strategy</h3>
+  <label>Target Exit Price ($): </label>
+  <input type="number" id="exitPrice" placeholder="e.g. 15"><br>
 
-    <label>Notes / Conditions: </label><br>
-    <textarea rows="4" cols="50" placeholder="e.g. Exit if price reaches target or momentum slows."></textarea>
-  </div>
+  <label>Exit Notes: </label><br>
+  <textarea id="exitNotes" rows="4" cols="50" placeholder="E.g. Exit if price exceeds target or volume drops."></textarea>
+</div>
 
-  <script>
-    function generatePlan() {
-      const capital = parseFloat(document.getElementById("capital").value);
-      const startPrice = parseFloat(document.getElementById("startPrice").value);
-      const percentStep = parseFloat(document.getElementById("percentStep").value);
-      const stepCapital = (capital / 5).toFixed(2);
-      let planHTML = '';
+<div class="controls">
+  <h3>⚙️ Tools</h3>
+  <button onclick="downloadCSV()">💾 Save as CSV</button>
+  <button onclick="loadCSV()">📂 Load Saved</button>
+  <button onclick="generatePDF()">📄 Export as PDF</button>
+</div>
 
-      for (let i = 0; i < 5; i++) {
-        const price = (startPrice * Math.pow(1 + percentStep / 100, i)).toFixed(2);
-        planHTML += `
-          <div class="buy-step">
-            <input type="checkbox" id="buy${i + 1}" />
-            <label for="buy${i + 1}">Buy #${i + 1}</label><br>
-            Target Price: $<strong>${price}</strong><br>
-            Capital to Use: $<strong>${stepCapital}</strong>
-          </div>
-        `;
+<script>
+let planData = [];
+
+function generatePlan() {
+  const capital = parseFloat(document.getElementById("capital").value);
+  const startPrice = parseFloat(document.getElementById("startPrice").value);
+  const percentStep = parseFloat(document.getElementById("percentStep").value);
+  const stopLoss = parseFloat(document.getElementById("stopLoss").value);
+  const stepCapital = (capital / 5).toFixed(2);
+
+  const container = document.getElementById("buyPlan");
+  container.innerHTML = "";
+  planData = [];
+
+  for (let i = 0; i < 5; i++) {
+    const price = (startPrice * Math.pow(1 + percentStep / 100, i)).toFixed(2);
+    const stop = (price * (1 - stopLoss / 100)).toFixed(2);
+    const id = `buy${i + 1}`;
+
+    const step = {
+      step: i + 1,
+      targetPrice: price,
+      stopLoss: stop,
+      capital: stepCapital,
+      checked: false
+    };
+
+    planData.push(step);
+
+    container.innerHTML += `
+      <div class="buy-step">
+        <input type="checkbox" id="${id}" onchange="toggleBuy(${i})">
+        <label for="${id}">Buy #${i + 1}</label><br>
+        Target Price: $<strong>${price}</strong><br>
+        Capital: $<strong>${stepCapital}</strong><br>
+        Stop Loss Price: $<strong>${stop}</strong>
+      </div>
+    `;
+  }
+}
+
+function toggleBuy(index) {
+  planData[index].checked = document.getElementById(`buy${index + 1}`).checked;
+}
+
+function downloadCSV() {
+  const csv = Papa.unparse(planData);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "buy_plan.csv";
+  link.click();
+}
+
+function loadCSV() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = ".csv";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    Papa.parse(file, {
+      header: true,
+      complete: results => {
+        planData = results.data.map((row, i) => ({
+          ...row,
+          step: parseInt(row.step),
+          capital: parseFloat(row.capital),
+          targetPrice: parseFloat(row.targetPrice),
+          stopLoss: parseFloat(row.stopLoss),
+          checked: row.checked === "true"
+        }));
+        refreshPlanFromData();
       }
+    });
+  };
+  input.click();
+}
 
-      document.getElementById("buyPlan").innerHTML = planHTML;
-    }
-  </script>
+function refreshPlanFromData() {
+  const container = document.getElementById("buyPlan");
+  container.innerHTML = "";
+  planData.forEach((step, i) => {
+    const id = `buy${i + 1}`;
+    container.innerHTML += `
+      <div class="buy-step">
+        <input type="checkbox" id="${id}" ${step.checked ? "checked" : ""} onchange="toggleBuy(${i})">
+        <label for="${id}">Buy #${step.step}</label><br>
+        Target Price: $<strong>${step.targetPrice}</strong><br>
+        Capital: $<strong>${step.capital}</strong><br>
+        Stop Loss Price: $<strong>${step.stopLoss}</strong>
+      </div>
+    `;
+  });
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text("Buy Averaging Plan", 10, 10);
+  doc.setFontSize(12);
+
+  planData.forEach((step, i) => {
+    doc.text(
+      `Buy #${step.step}: Price $${step.targetPrice}, Capital $${step.capital}, Stop Loss $${step.stopLoss}, Checked: ${step.checked}`,
+      10,
+      20 + i * 10
+    );
+  });
+
+  const exitPrice = document.getElementById("exitPrice").value;
+  const notes = document.getElementById("exitNotes").value;
+
+  doc.text(`Exit Price: $${exitPrice}`, 10, 80);
+  doc.text("Exit Notes:", 10, 90);
+  doc.text(notes, 10, 100);
+
+  doc.save("Buy_Plan.pdf");
+}
+</script>
 
 </body>
 </html>
