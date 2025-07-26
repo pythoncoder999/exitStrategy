@@ -3,146 +3,209 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Averaging Up Planner · Live Sync</title>
+  <title>Averaging-Up Buy Planner</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 10px; background: #f7f7f7; }
-    h1 { text-align: center; color: #333; }
-    .controls, .exit-plan, .plan { max-width: 600px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; }
-    input, button, textarea { width: 100%; margin: 6px 0; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
-    .buy-step { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; flex-direction: column; }
-    .buy-step:last-child { border: none; }
-    @media (min-width: 500px) {
-      .buy-step { flex-direction: row; align-items: center; justify-content: space-between; }
-      .buy-step > div { flex: 1; }
+    :root { --green: #28a745; --red: #dc3545; --light: #f8f9fa; --dark: #343a40; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0; padding: 0;
+      background: var(--light);
+    }
+    header {
+      padding: 1rem;
+      background: var(--dark);
+      color: white;
+      text-align: center;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 1rem;
+    }
+    .input-group input, .input-group select, textarea {
+      width: 100%; padding: 10px; margin: 8px 0;
+      border-radius: 5px; border: 1px solid #ccc;
+    }
+    .buy-step {
+      background: white; padding: 1rem;
+      margin-top: 10px;
+      border-radius: 8px;
+      border-left: 5px solid #007bff;
+    }
+    .buy-step.checked { border-left-color: var(--green); opacity: 0.8; }
+    .buy-step .meta {
+      display: flex; justify-content: space-between;
+      flex-wrap: wrap; font-size: 0.9em;
+    }
+    .buy-step .meta div {
+      margin: 4px 0;
+    }
+    .status-up { color: var(--green); }
+    .status-down { color: var(--red); }
+    button {
+      background: #007bff; color: white;
+      border: none; padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 5px; cursor: pointer;
+    }
+    @media (max-width: 600px) {
+      .meta { flex-direction: column; }
     }
   </style>
 </head>
 <body>
 
-<h1>📈 Live Averaging‑Up Planner</h1>
+<header>
+  <h1>📈 Averaging-Up Buy Planner</h1>
+</header>
 
-<div class="controls">
-  <input type="text" id="symbol" placeholder="Asset symbol (e.g. BTC, AAPL)" />
-  <input type="number" id="capital" placeholder="Total Capital ($)" value="1000" />
-  <input type="number" id="startPrice" placeholder="Start Price ($)" value="10" />
-  <input type="number" id="percentStep" placeholder="% Increase / Buy" value="10" />
-  <input type="number" id="stopLoss" placeholder="Stop Loss (%)" value="5" />
-  <button onclick="generatePlan()">Generate Plan</button>
-</div>
+<div class="container">
 
-<div class="plan" id="buyPlan"></div>
+  <div class="input-group">
+    <input type="text" id="symbol" placeholder="CoinGecko ID (e.g. bitcoin, ethereum)">
+    <input type="number" id="capital" placeholder="Total Capital ($)" value="1000">
+    <input type="number" id="startPrice" placeholder="Starting Buy Price ($)" value="10">
+    <input type="number" id="stepPct" placeholder="Percent Increase per Buy (%)" value="10">
+    <input type="number" id="stopLoss" placeholder="Stop Loss (%)" value="5">
+    <button onclick="generatePlan()">Generate Buy Plan</button>
+  </div>
 
-<div class="exit-plan">
-  <h3>Exit Strategy</h3>
-  <input type="number" id="exitPrice" placeholder="Target Exit Price ($)" />
-  <textarea id="exitNotes" placeholder="Exit conditions (momentum slowdown, etc.)"></textarea>
-</div>
+  <div id="livePriceInfo"></div>
+  <div id="buyPlan"></div>
 
-<div class="controls">
-  <button onclick="downloadCSV()">💾 Save Plan CSV</button>
-  <button onclick="loadCSV()">📂 Load Saved Plan</button>
-  <button onclick="generatePDF()">📄 Export PDF</button>
+  <div class="input-group">
+    <h3>🚪 Exit Strategy</h3>
+    <input type="number" id="exitPrice" placeholder="Target Exit Price ($)">
+    <textarea id="exitNotes" placeholder="E.g. exit on rally over $20, or macro weakness."></textarea>
+  </div>
+
+  <div class="input-group">
+    <button onclick="saveCSV()">💾 Export CSV</button>
+    <button onclick="exportPDF()">📄 Export PDF</button>
+  </div>
 </div>
 
 <script>
-  let planData = [];
-  let currentPrice = null;
+  let planData = [], livePrice = null, autoRefresh;
 
-  async function fetchPrice(sym) {
+  async function fetchPrice(symbol) {
     try {
-      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${sym.toLowerCase()}&vs_currencies=usd`);
-      const json = await res.json();
-      return json[sym.toLowerCase()]?.usd || null;
-    } catch { return null; }
-  }
-
-  async function generatePlan() {
-    const symbol = document.getElementById("symbol").value.trim();
-    const capital = +document.getElementById("capital").value;
-    const start = +document.getElementById("startPrice").value;
-    const pct = +document.getElementById("percentStep").value;
-    const sl = +document.getElementById("stopLoss").value;
-    const stepCap = (capital / 5).toFixed(2);
-
-    currentPrice = symbol ? await fetchPrice(symbol) : null;
-
-    planData = [];
-    const container = document.getElementById("buyPlan");
-    container.innerHTML = `<p>Current Price of ${symbol.toUpperCase()}: ${
-      currentPrice ? '$' + currentPrice : 'N/A'
-    }</p>`;
-    for (let i = 0; i < 5; i++) {
-      const tp = +(start * Math.pow(1 + pct / 100, i)).toFixed(2);
-      const sp = +(tp * (1 - sl / 100)).toFixed(2);
-      planData.push({ step: i+1, targetPrice: tp, stopLoss: sp, capital: stepCap, checked: false });
-      container.innerHTML += `
-        <div class="buy-step">
-          <div>
-            <input type="checkbox" id="b${i}" onchange="toggleBuy(${i})">
-            <label for="b${i}">Buy #${i+1}</label>
-          </div>
-          <div>Target: $${tp}</div>
-          <div>Stop‑Loss: $${sp}</div>
-          <div>Capital: $${stepCap}</div>
-        </div>`;
+      const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`);
+      const d = await r.json();
+      return d[symbol]?.usd || null;
+    } catch {
+      return null;
     }
   }
 
-  function toggleBuy(i) { planData[i].checked = document.getElementById(`b${i}`).checked; }
+  async function generatePlan() {
+    clearInterval(autoRefresh);
+    const symbol = document.getElementById("symbol").value.toLowerCase().trim();
+    const capital = +document.getElementById("capital").value;
+    const startPrice = +document.getElementById("startPrice").value;
+    const stepPct = +document.getElementById("stepPct").value;
+    const stopLoss = +document.getElementById("stopLoss").value;
+    const chunk = (capital / 5).toFixed(2);
 
-  function downloadCSV() {
+    if (!symbol || !startPrice || !capital) return;
+
+    planData = [];
+    for (let i = 0; i < 5; i++) {
+      const target = +(startPrice * Math.pow(1 + stepPct / 100, i)).toFixed(2);
+      const stop = +(target * (1 - stopLoss / 100)).toFixed(2);
+      planData.push({
+        step: i + 1,
+        target, stop, capital: chunk,
+        checked: false
+      });
+    }
+
+    localStorage.setItem("buyPlan", JSON.stringify(planData));
+    localStorage.setItem("symbol", symbol);
+    updatePlan();
+    livePrice = await fetchPrice(symbol);
+    updatePriceInfo();
+    autoRefresh = setInterval(async () => {
+      livePrice = await fetchPrice(symbol);
+      updatePriceInfo();
+    }, 60000); // refresh every 60s
+  }
+
+  function updatePlan() {
+    const el = document.getElementById("buyPlan");
+    el.innerHTML = "";
+    planData.forEach((p, i) => {
+      const diff = livePrice ? ((livePrice - p.target) / p.target * 100).toFixed(2) : null;
+      const status = diff ? (diff > 0 ? "↑ " + diff + "%" : "↓ " + diff + "%") : "";
+      const statusClass = diff > 0 ? "status-up" : "status-down";
+      const checked = p.checked ? "checked" : "";
+      const stepEl = document.createElement("div");
+      stepEl.className = `buy-step ${p.checked ? "checked" : ""}`;
+      stepEl.innerHTML = `
+        <input type="checkbox" id="buy${i}" ${checked} onchange="toggleBuy(${i})">
+        <strong>Buy #${p.step}</strong>
+        <div class="meta">
+          <div>🎯 $${p.target}</div>
+          <div>🛑 $${p.stop}</div>
+          <div>💰 $${p.capital}</div>
+          <div class="${statusClass}">${status}</div>
+        </div>
+      `;
+      el.appendChild(stepEl);
+    });
+  }
+
+  function toggleBuy(i) {
+    planData[i].checked = document.getElementById(`buy${i}`).checked;
+    updatePlan();
+    localStorage.setItem("buyPlan", JSON.stringify(planData));
+  }
+
+  function updatePriceInfo() {
+    document.getElementById("livePriceInfo").innerHTML = livePrice
+      ? `<p>🔁 Live Price: <strong>$${livePrice}</strong></p>`
+      : `<p>❌ Live price not available</p>`;
+    updatePlan();
+  }
+
+  function saveCSV() {
     const csv = Papa.unparse(planData);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = 'plan.csv';
+    a.download = "buy_plan.csv";
     a.click();
   }
 
-  function loadCSV() {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = '.csv';
-    inp.onchange = e => {
-      Papa.parse(e.target.files[0], {
-        header: true,
-        complete: r => {
-          planData = r.data.map((r,i)=>({
-            step: +r.step, targetPrice:+r.targetPrice,
-            stopLoss:+r.stopLoss, capital:+r.capital,
-            checked: r.checked === 'true'
-          }));
-          refresh();
-        }
-      });
-    };
-    inp.click();
-  }
-
-  function refresh() {
-    generatePlan(); // regenerate UI, then restore checkboxes
-    planData.forEach((p,i) => {
-      document.getElementById(`b${i}`).checked = p.checked;
-    });
-  }
-
-  function generatePDF() {
+  function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Averaging‑Up Plan", 10, 10);
-    planData.forEach((p,i) => {
-      doc.setFontSize(12);
-      doc.text(`Buy #${p.step}: target $${p.targetPrice}, stop $${p.stopLoss}, cap $${p.capital}, done: ${p.checked}`, 10, 20 + i * 8);
+    doc.text("Buy Averaging Plan", 10, 10);
+    planData.forEach((p, i) => {
+      doc.text(
+        `Buy #${p.step}: Target $${p.target}, Stop $${p.stop}, Cap $${p.capital}, Done: ${p.checked}`,
+        10,
+        20 + i * 10
+      );
     });
-    const exitPrice = +document.getElementById("exitPrice").value;
-    doc.text(`Exit Target: $${exitPrice}`, 10, 70);
-    doc.text("Notes:", 10, 80);
-    doc.setFontSize(10);
-    doc.text(document.getElementById("exitNotes").value || '', 10, 90);
+    const ep = document.getElementById("exitPrice").value;
+    const notes = document.getElementById("exitNotes").value;
+    doc.text(`Exit Target: $${ep}`, 10, 90);
+    doc.text("Notes:", 10, 100);
+    doc.text(notes, 10, 110);
     doc.save("plan.pdf");
   }
+
+  window.onload = () => {
+    const saved = localStorage.getItem("buyPlan");
+    if (saved) {
+      planData = JSON.parse(saved);
+      document.getElementById("symbol").value = localStorage.getItem("symbol") || "";
+      updatePlan();
+    }
+  };
 </script>
 
 </body>
