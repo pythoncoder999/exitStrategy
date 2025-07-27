@@ -654,6 +654,13 @@
             text-align: center;
         }
 
+        .exit-table th {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
         .investment-table td {
             padding: 15px;
             text-align: center;
@@ -732,6 +739,22 @@
             background: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             margin-bottom: 15px;
+        }
+
+        .remaining-position {
+            background: rgba(40, 167, 69, 0.1);
+            border: 2px solid rgba(40, 167, 69, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .remaining-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #28a745;
+            margin: 5px 0;
         }
 
         @media (max-width: 1200px) {
@@ -982,17 +1005,25 @@
                 <div class="exit-plan-section">
                     <h3 class="section-title" style="color: #dc3545;">🎯 Exit Plan</h3>
                     
+                    <div class="remaining-position" id="remainingPosition">
+                        <div style="font-size: 14px; color: #666;">Current Position Value</div>
+                        <div class="remaining-value" id="remainingValue">$0</div>
+                        <div style="font-size: 12px; color: #666;">Available for Exit</div>
+                    </div>
+                    
                     <div class="exit-summary" id="exitSummaryContent">
                         <!-- Exit summary will be populated here -->
                     </div>
                     
-                    <div class="investment-table">
+                    <div class="investment-table exit-table">
                         <table style="font-size: 12px;">
                             <thead>
                                 <tr>
+                                    <th>✓</th>
                                     <th>Level</th>
                                     <th>Exit Price</th>
                                     <th>Amount</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="exitPlanTable">
@@ -1255,8 +1286,9 @@
                     investmentAmount: investmentPerLevel,
                     completed: false,
                     percentage: i * 5,
+                    exited: false,
                     exitPrice: null,
-                    exitAmount: 0
+                    exitExecuted: false
                 });
             }
             
@@ -1267,7 +1299,7 @@
             const exitPlan = [];
             
             investmentPlan.forEach((level, index) => {
-                if (level.completed) {
+                if (level.completed && !level.exitExecuted) {
                     // Calculate exit price based on target price with some profit margin
                     const profitMultiplier = 1 + (0.10 + (index * 0.05)); // 10% + 5% per level
                     const exitPrice = targetPrice * profitMultiplier;
@@ -1276,7 +1308,8 @@
                         level: level.level,
                         exitPrice: exitPrice,
                         exitAmount: level.investmentAmount,
-                        originalInvestment: level.investmentAmount
+                        originalInvestment: level.investmentAmount,
+                        exitExecuted: level.exitExecuted || false
                     });
                 }
             });
@@ -1319,19 +1352,24 @@
             // Update summary
             const summaryDiv = document.getElementById('investmentSummary');
             const completedLevels = plan.filter(p => p.completed).length;
+            const exitedLevels = plan.filter(p => p.exitExecuted).length;
             const completionPercentage = (completedLevels / 5) * 100;
             const totalInvested = plan.filter(p => p.completed).reduce((sum, p) => sum + p.investmentAmount, 0);
-            const remainingAmount = availableAmount - totalInvested;
+            const totalExited = plan.filter(p => p.exitExecuted).reduce((sum, p) => sum + p.investmentAmount, 0);
+            const remainingPosition = totalInvested - totalExited;
             
             summaryDiv.innerHTML = `
                 <h3>📈 ${stock} Investment & Exit Strategy</h3>
                 <p><strong>Base Price:</strong> ${formatNumber(basePrice)} | <strong>Target Price:</strong> ${formatNumber(targetPrice)}</p>
-                <p><strong>Total Available:</strong> ${formatInvestmentAmount(availableAmount)} | <strong>Invested:</strong> ${formatInvestmentAmount(totalInvested)} | <strong>Remaining:</strong> ${formatInvestmentAmount(remainingAmount)}</p>
-                <p><strong>Progress:</strong> ${completedLevels}/5 levels completed (${completionPercentage.toFixed(0)}%)</p>
+                <p><strong>Total Available:</strong> ${formatInvestmentAmount(availableAmount)} | <strong>Invested:</strong> ${formatInvestmentAmount(totalInvested)} | <strong>Remaining Position:</strong> ${formatInvestmentAmount(remainingPosition)}</p>
+                <p><strong>Progress:</strong> ${completedLevels}/5 invested | ${exitedLevels}/5 exited</p>
             `;
 
             // Update progress bar
             document.getElementById('progressFill').style.width = `${completionPercentage}%`;
+
+            // Update remaining position display
+            document.getElementById('remainingValue').textContent = formatInvestmentAmount(remainingPosition);
 
             // Update investment table
             const tableBody = document.getElementById('investmentPlanTable');
@@ -1367,16 +1405,17 @@
             
             // Update exit summary
             const exitSummaryDiv = document.getElementById('exitSummaryContent');
-            const totalExitValue = exitPlan.reduce((sum, exit) => sum + exit.exitAmount, 0);
+            const totalExitValue = exitPlan.reduce((sum, exit) => sum + (exit.exitExecuted ? 0 : exit.exitAmount), 0);
             const totalInvested = exitPlan.reduce((sum, exit) => sum + exit.originalInvestment, 0);
-            const potentialProfit = totalExitValue - totalInvested;
+            const totalExitedValue = exitPlan.reduce((sum, exit) => sum + (exit.exitExecuted ? exit.exitAmount : 0), 0);
+            const activeLevels = exitPlan.filter(exit => !exit.exitExecuted).length;
             
             exitSummaryDiv.innerHTML = `
-                <div><strong>Active Levels:</strong> ${exitPlan.length}</div>
-                <div><strong>Total Invested:</strong> ${formatInvestmentAmount(totalInvested)}</div>
-                <div><strong>Exit Value:</strong> ${formatInvestmentAmount(totalExitValue)}</div>
-                <div style="color: ${potentialProfit >= 0 ? '#28a745' : '#dc3545'}; font-weight: 600;">
-                    <strong>Potential Profit:</strong> ${formatInvestmentAmount(potentialProfit)}
+                <div><strong>Active Levels:</strong> ${activeLevels}</div>
+                <div><strong>Available to Exit:</strong> ${formatInvestmentAmount(totalExitValue)}</div>
+                <div><strong>Already Exited:</strong> ${formatInvestmentAmount(totalExitedValue)}</div>
+                <div style="color: #17a2b8; font-weight: 600;">
+                    <strong>Total Invested:</strong> ${formatInvestmentAmount(totalInvested)}
                 </div>
             `;
 
@@ -1386,15 +1425,23 @@
 
             if (exitPlan.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="3" style="text-align: center; color: #666; font-style: italic;">No active investments to exit</td>';
+                row.innerHTML = '<td colspan="5" style="text-align: center; color: #666; font-style: italic;">No active investments to exit</td>';
                 exitTableBody.appendChild(row);
             } else {
-                exitPlan.forEach(exit => {
+                exitPlan.forEach((exit, index) => {
                     const row = document.createElement('tr');
+                    const statusClass = exit.exitExecuted ? 'status-exited' : 'status-pending';
+                    const statusText = exit.exitExecuted ? 'Exited' : 'Active';
+                    
                     row.innerHTML = `
+                        <td class="checkbox-cell">
+                            <input type="checkbox" ${exit.exitExecuted ? 'checked' : ''} 
+                                   onchange="toggleExitLevel(${exit.level - 1})">
+                        </td>
                         <td><strong>L${exit.level}</strong></td>
                         <td class="price-level">${formatNumber(exit.exitPrice)}</td>
                         <td class="exit-amount">${formatInvestmentAmount(exit.exitAmount)}</td>
+                        <td><span class="investment-status ${statusClass}">${statusText}</span></td>
                     `;
                     exitTableBody.appendChild(row);
                 });
@@ -1406,11 +1453,40 @@
 
             currentInvestmentPlan.plan[levelIndex].completed = !currentInvestmentPlan.plan[levelIndex].completed;
             
+            // If unchecking investment, also uncheck exit
+            if (!currentInvestmentPlan.plan[levelIndex].completed) {
+                currentInvestmentPlan.plan[levelIndex].exitExecuted = false;
+            }
+            
             // Update the note in the main notes array
             const note = notes.find(n => n.id === currentInvestmentPlan.noteId);
             if (note) {
                 note.investmentPlan = currentInvestmentPlan.plan;
             }
+
+            updateInvestmentModal();
+            renderNotes(); // Update the main table to reflect changes
+        }
+
+        function toggleExitLevel(levelIndex) {
+            if (!currentInvestmentPlan) return;
+
+            // Only allow exit if investment is completed
+            if (!currentInvestmentPlan.plan[levelIndex].completed) {
+                showStatus('Cannot exit before investing in this level!', 'error');
+                return;
+            }
+
+            currentInvestmentPlan.plan[levelIndex].exitExecuted = !currentInvestmentPlan.plan[levelIndex].exitExecuted;
+            
+            // Update the note in the main notes array
+            const note = notes.find(n => n.id === currentInvestmentPlan.noteId);
+            if (note) {
+                note.investmentPlan = currentInvestmentPlan.plan;
+            }
+
+            const action = currentInvestmentPlan.plan[levelIndex].exitExecuted ? 'executed' : 'cancelled';
+            showStatus(`Exit for Level ${levelIndex + 1} ${action}!`, 'success');
 
             updateInvestmentModal();
             renderNotes(); // Update the main table to reflect changes
@@ -1496,7 +1572,9 @@
                 let planProgress = '';
                 if (note.investmentPlan) {
                     const completed = note.investmentPlan.filter(p => p.completed).length;
-                    planProgress = `${completed}/5 levels`;
+                    const exited = note.investmentPlan.filter(p => p.exitExecuted).length;
+                    const active = completed - exited;
+                    planProgress = `${completed}/5 inv, ${active} active`;
                 } else {
                     planProgress = 'Not started';
                 }
@@ -1513,7 +1591,7 @@
                     <td>
                         <button class="plan-btn" onclick="openInvestmentModal(${note.id})" 
                                 style="padding: 6px 12px; font-size: 12px;">
-                            📊 Plan (${planProgress})
+                            📊 Plan<br><small>(${planProgress})</small>
                         </button>
                     </td>
                     <td><button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button></td>
