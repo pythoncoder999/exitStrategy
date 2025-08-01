@@ -899,12 +899,22 @@
                 
                 <div class="input-group">
                     <label for="marginSelect">Margin Ratio:</label>
-                    <select id="marginSelect" class="margin-select" onchange="calculateAvailable()">
-                        <option value="20">20%</option>
-                        <option value="25">25%</option>
-                        <option value="30">30%</option>
-                        <option value="100">100%</option>
-                    </select>
+                    <div class="dropdown-container">
+                        <select id="marginSelect" class="margin-select" onchange="checkCustomMargin(); calculateAvailable()">
+                            <option value="20">20%</option>
+                            <option value="25">25%</option>
+                            <option value="30">30%</option>
+                            <option value="100">100%</option>
+                            <option value="CUSTOM">+ Custom Margin</option>
+                        </select>
+                        <input type="number" id="customMargin" placeholder="Enter custom margin..." step="1" min="1" max="100" style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addMarginBtn" onclick="addCustomMargin()" style="display: none;">Add Margin</button>
+                        <button class="manage-btn" onclick="toggleMarginManager()">Manage Margins</button>
+                        <div id="marginManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Margins:</h4>
+                            <div id="marginItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -1081,6 +1091,7 @@
     <script>
         let notes = [];
         let stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+        let marginRatios = [20, 25, 30, 100];
         let averagingUpRates = [3, 5, 7, 10, 15];
         let stopLossRates = [5, 7, 10, 15, 20];
         let currentSort = null;
@@ -1185,7 +1196,217 @@
             }
         }
 
-        // FIXED: Averaging Up and Stop Loss Management Functions
+        // Stock Management Functions
+        function checkCustomStock() {
+            const select = document.getElementById('stockSelect');
+            const customInput = document.getElementById('customStock');
+            const addBtn = document.getElementById('addStockBtn');
+
+            if (select.value === 'CUSTOM') {
+                customInput.style.display = 'block';
+                addBtn.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                addBtn.style.display = 'none';
+            }
+        }
+
+        function addNewStock() {
+            const customInput = document.getElementById('customStock');
+            const select = document.getElementById('stockSelect');
+            const newStock = customInput.value.trim().toUpperCase();
+
+            if (newStock && !stockOptions.includes(newStock)) {
+                stockOptions.push(newStock);
+                stockOptions.sort();
+                updateStockDropdown();
+                select.value = newStock;
+                customInput.style.display = 'none';
+                document.getElementById('addStockBtn').style.display = 'none';
+                customInput.value = '';
+                updateStockManager();
+                showStatus(`Stock "${newStock}" added successfully!`, 'success');
+            } else if (stockOptions.includes(newStock)) {
+                showStatus(`Stock "${newStock}" already exists!`, 'error');
+            } else {
+                showStatus('Please enter a valid stock symbol!', 'error');
+            }
+        }
+
+        function toggleStockManager() {
+            const manager = document.getElementById('stockManager');
+            if (manager.style.display === 'none') {
+                manager.style.display = 'block';
+                updateStockManager();
+            } else {
+                manager.style.display = 'none';
+            }
+        }
+
+        function updateStockManager() {
+            const container = document.getElementById('stockItems');
+            container.innerHTML = '';
+
+            stockOptions.forEach(stock => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerHTML = `
+                    <span>${stock}</span>
+                    <button class="remove-item-btn" onclick="removeStock('${stock}')" title="Remove ${stock}">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function removeStock(stockToRemove) {
+            if (stockOptions.length <= 1) {
+                showStatus('Cannot remove the last stock option!', 'error');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to remove "${stockToRemove}" from the stock list?`)) {
+                stockOptions = stockOptions.filter(stock => stock !== stockToRemove);
+                updateStockDropdown();
+                updateStockManager();
+                
+                const select = document.getElementById('stockSelect');
+                if (select.value === stockToRemove) {
+                    select.value = '';
+                }
+                
+                showStatus(`Stock "${stockToRemove}" removed successfully!`, 'success');
+            }
+        }
+
+        function updateStockDropdown() {
+            const select = document.getElementById('stockSelect');
+            const customOption = select.querySelector('option[value="CUSTOM"]');
+            const currentValue = select.value;
+            
+            const existingOptions = select.querySelectorAll('option:not([value=""]):not([value="CUSTOM"])');
+            existingOptions.forEach(option => option.remove());
+            
+            stockOptions.forEach(stock => {
+                const option = document.createElement('option');
+                option.value = stock;
+                option.textContent = stock;
+                select.insertBefore(option, customOption);
+            });
+
+            // Restore selection if it still exists
+            if (stockOptions.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Margin Management Functions
+        function checkCustomMargin() {
+            const select = document.getElementById('marginSelect');
+            const customInput = document.getElementById('customMargin');
+            const addBtn = document.getElementById('addMarginBtn');
+
+            if (select.value === 'CUSTOM') {
+                customInput.style.display = 'block';
+                addBtn.style.display = 'block';
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                addBtn.style.display = 'none';
+            }
+        }
+
+        function addCustomMargin() {
+            const customInput = document.getElementById('customMargin');
+            const select = document.getElementById('marginSelect');
+            const newMargin = parseInt(customInput.value);
+
+            if (newMargin && newMargin > 0 && newMargin <= 100 && !marginRatios.includes(newMargin)) {
+                marginRatios.push(newMargin);
+                marginRatios.sort((a, b) => a - b);
+                updateMarginDropdown();
+                select.value = newMargin.toString();
+                customInput.style.display = 'none';
+                document.getElementById('addMarginBtn').style.display = 'none';
+                customInput.value = '';
+                updateMarginManager();
+                calculateAvailable();
+                showStatus(`Margin ratio "${newMargin}%" added successfully!`, 'success');
+            } else if (marginRatios.includes(newMargin)) {
+                showStatus(`Margin "${newMargin}%" already exists!`, 'error');
+            } else {
+                showStatus('Please enter a valid margin between 1% and 100%!', 'error');
+            }
+        }
+
+        function toggleMarginManager() {
+            const manager = document.getElementById('marginManager');
+            if (manager.style.display === 'none') {
+                manager.style.display = 'block';
+                updateMarginManager();
+            } else {
+                manager.style.display = 'none';
+            }
+        }
+
+        function updateMarginManager() {
+            const container = document.getElementById('marginItems');
+            container.innerHTML = '';
+
+            marginRatios.forEach(margin => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerHTML = `
+                    <span>${margin}%</span>
+                    <button class="remove-item-btn" onclick="removeMargin(${margin})" title="Remove ${margin}%">×</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function removeMargin(marginToRemove) {
+            if (marginRatios.length <= 1) {
+                showStatus('Cannot remove the last margin option!', 'error');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to remove "${marginToRemove}%" from the margin ratios?`)) {
+                marginRatios = marginRatios.filter(m => m !== marginToRemove);
+                updateMarginDropdown();
+                updateMarginManager();
+                
+                const select = document.getElementById('marginSelect');
+                if (select.value === marginToRemove.toString()) {
+                    select.value = marginRatios[0] ? marginRatios[0].toString() : '20';
+                    calculateAvailable();
+                }
+                
+                showStatus(`Margin ratio "${marginToRemove}%" removed successfully!`, 'success');
+            }
+        }
+
+        function updateMarginDropdown() {
+            const select = document.getElementById('marginSelect');
+            const customOption = select.querySelector('option[value="CUSTOM"]');
+            const currentValue = select.value;
+            
+            const existingOptions = select.querySelectorAll('option:not([value="CUSTOM"])');
+            existingOptions.forEach(option => option.remove());
+            
+            marginRatios.forEach(margin => {
+                const option = document.createElement('option');
+                option.value = margin.toString();
+                option.textContent = `${margin}%`;
+                select.insertBefore(option, customOption);
+            });
+
+            // Restore selection if it still exists
+            if (marginRatios.includes(parseInt(currentValue))) {
+                select.value = currentValue;
+            }
+        }
+
+        // Averaging Up Management Functions
         function checkCustomAveragingUp() {
             const select = document.getElementById('averagingUpSelect');
             const customInput = document.getElementById('customAveragingUp');
@@ -1242,25 +1463,29 @@
                 item.className = 'dropdown-item';
                 item.innerHTML = `
                     <span>${rate}%</span>
-                    <button class="remove-item-btn" onclick="removeAveragingUpRate('${rate}')" title="Remove ${rate}%">×</button>
+                    <button class="remove-item-btn" onclick="removeAveragingUpRate(${rate})" title="Remove ${rate}%">×</button>
                 `;
                 container.appendChild(item);
             });
         }
 
         function removeAveragingUpRate(rateToRemove) {
-            const rate = parseFloat(rateToRemove);
-            if (confirm(`Are you sure you want to remove "${rate}%" from the averaging up rates?`)) {
-                averagingUpRates = averagingUpRates.filter(r => r !== rate);
+            if (averagingUpRates.length <= 1) {
+                showStatus('Cannot remove the last averaging up rate!', 'error');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to remove "${rateToRemove}%" from the averaging up rates?`)) {
+                averagingUpRates = averagingUpRates.filter(r => r !== rateToRemove);
                 updateAveragingUpDropdown();
                 updateAveragingUpManager();
                 
                 const select = document.getElementById('averagingUpSelect');
-                if (select.value === rate.toString()) {
-                    select.value = averagingUpRates[0] || '5';
+                if (select.value === rateToRemove.toString()) {
+                    select.value = averagingUpRates[0] ? averagingUpRates[0].toString() : '5';
                 }
                 
-                showStatus(`Averaging up rate "${rate}%" removed successfully!`, 'success');
+                showStatus(`Averaging up rate "${rateToRemove}%" removed successfully!`, 'success');
             }
         }
 
@@ -1285,7 +1510,7 @@
             }
         }
 
-        // FIXED: Stop Loss Management Functions
+        // Stop Loss Management Functions
         function checkCustomStopLoss() {
             const select = document.getElementById('stopLossSelect');
             const customInput = document.getElementById('customStopLoss');
@@ -1342,25 +1567,29 @@
                 item.className = 'dropdown-item';
                 item.innerHTML = `
                     <span>${rate}%</span>
-                    <button class="remove-item-btn" onclick="removeStopLossRate('${rate}')" title="Remove ${rate}%">×</button>
+                    <button class="remove-item-btn" onclick="removeStopLossRate(${rate})" title="Remove ${rate}%">×</button>
                 `;
                 container.appendChild(item);
             });
         }
 
         function removeStopLossRate(rateToRemove) {
-            const rate = parseFloat(rateToRemove);
-            if (confirm(`Are you sure you want to remove "${rate}%" from the stop loss rates?`)) {
-                stopLossRates = stopLossRates.filter(r => r !== rate);
+            if (stopLossRates.length <= 1) {
+                showStatus('Cannot remove the last stop loss rate!', 'error');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to remove "${rateToRemove}%" from the stop loss rates?`)) {
+                stopLossRates = stopLossRates.filter(r => r !== rateToRemove);
                 updateStopLossDropdown();
                 updateStopLossManager();
                 
                 const select = document.getElementById('stopLossSelect');
-                if (select.value === rate.toString()) {
-                    select.value = stopLossRates[0] || '10';
+                if (select.value === rateToRemove.toString()) {
+                    select.value = stopLossRates[0] ? stopLossRates[0].toString() : '10';
                 }
                 
-                showStatus(`Stop loss rate "${rate}%" removed successfully!`, 'success');
+                showStatus(`Stop loss rate "${rateToRemove}%" removed successfully!`, 'success');
             }
         }
 
@@ -1381,104 +1610,6 @@
 
             // Restore selection if it still exists
             if (stopLossRates.includes(parseFloat(currentValue))) {
-                select.value = currentValue;
-            }
-        }
-
-        // Stock Management Functions
-        function checkCustomStock() {
-            const select = document.getElementById('stockSelect');
-            const customInput = document.getElementById('customStock');
-            const addBtn = document.getElementById('addStockBtn');
-
-            if (select.value === 'CUSTOM') {
-                customInput.style.display = 'block';
-                addBtn.style.display = 'block';
-                customInput.focus();
-            } else {
-                customInput.style.display = 'none';
-                addBtn.style.display = 'none';
-            }
-        }
-
-        function addNewStock() {
-            const customInput = document.getElementById('customStock');
-            const select = document.getElementById('stockSelect');
-            const newStock = customInput.value.trim().toUpperCase();
-
-            if (newStock && !stockOptions.includes(newStock)) {
-                stockOptions.push(newStock);
-                updateStockDropdown();
-                select.value = newStock;
-                customInput.style.display = 'none';
-                document.getElementById('addStockBtn').style.display = 'none';
-                customInput.value = '';
-                updateStockManager();
-                showStatus(`Stock "${newStock}" added successfully!`, 'success');
-            } else if (stockOptions.includes(newStock)) {
-                showStatus(`Stock "${newStock}" already exists!`, 'error');
-            } else {
-                showStatus('Please enter a valid stock symbol!', 'error');
-            }
-        }
-
-        function toggleStockManager() {
-            const manager = document.getElementById('stockManager');
-            if (manager.style.display === 'none') {
-                manager.style.display = 'block';
-                updateStockManager();
-            } else {
-                manager.style.display = 'none';
-            }
-        }
-
-        function updateStockManager() {
-            const container = document.getElementById('stockItems');
-            container.innerHTML = '';
-
-            stockOptions.forEach(stock => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.innerHTML = `
-                    <span>${stock}</span>
-                    <button class="remove-item-btn" onclick="removeStock('${stock}')" title="Remove ${stock}">×</button>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        function removeStock(stockToRemove) {
-            if (confirm(`Are you sure you want to remove "${stockToRemove}" from the stock list?`)) {
-                stockOptions = stockOptions.filter(stock => stock !== stockToRemove);
-                updateStockDropdown();
-                updateStockManager();
-                
-                const select = document.getElementById('stockSelect');
-                if (select.value === stockToRemove) {
-                    select.value = '';
-                }
-                
-                showStatus(`Stock "${stockToRemove}" removed successfully!`, 'success');
-            }
-        }
-
-        function updateStockDropdown() {
-            const select = document.getElementById('stockSelect');
-            const customOption = select.querySelector('option[value="CUSTOM"]');
-            const currentValue = select.value;
-            
-            const existingOptions = select.querySelectorAll('option:not([value=""]):not([value="CUSTOM"])');
-            existingOptions.forEach(option => option.remove());
-            
-            stockOptions.forEach(stock => {
-                const option = document.createElement('option');
-                option.value = stock;
-                option.textContent = stock;
-                select.insertBefore(option, customOption);
-            });
-
-            // Restore selection if it still exists
-            if (stockOptions.includes(currentValue)) {
                 select.value = currentValue;
             }
         }
@@ -1523,7 +1654,7 @@
             }
         }
 
-        // FIXED: Investment Planning Functions
+        // Investment Planning Functions
         function generateInvestmentPlan(note) {
             const basePrice = note.current;
             const availableAmount = note.availableToInvest;
@@ -1533,7 +1664,6 @@
             const plan = [];
             
             for (let i = 1; i <= 5; i++) {
-                // FIXED ALGORITHM: Level price = current price * (1 + averaging up rate)^level
                 const levelPrice = basePrice * Math.pow(1 + averagingUpRate, i);
                 
                 plan.push({
@@ -1551,14 +1681,13 @@
             return plan;
         }
 
-        // FIXED: Exit Plan Generation
+        // Exit Plan Generation
         function generateExitPlan(investmentPlan, stopLossRate) {
             const exitPlan = [];
             const stopLossDecimal = stopLossRate / 100; // Convert percentage to decimal
             
             investmentPlan.forEach((level, index) => {
                 if (level.completed && !level.exitExecuted) {
-                    // FIXED ALGORITHM: Exit price = level price * (1 - stop loss rate)
                     const exitPrice = level.targetPrice * (1 - stopLossDecimal);
                     
                     exitPlan.push({
@@ -1567,7 +1696,7 @@
                         exitAmount: level.investmentAmount,
                         originalInvestment: level.investmentAmount,
                         exitExecuted: level.exitExecuted || false,
-                        stopLossPercentage: (stopLossDecimal * 100).toFixed(2) // Show the actual stop loss percentage
+                        stopLossPercentage: (stopLossDecimal * 100).toFixed(2)
                     });
                 }
             });
@@ -1933,6 +2062,7 @@
             const dataStr = JSON.stringify({
                 notes: notes,
                 stockOptions: stockOptions,
+                marginRatios: marginRatios,
                 averagingUpRates: averagingUpRates,
                 stopLossRates: stopLossRates
             }, null, 2);
@@ -1982,6 +2112,11 @@
                     if (data.stockOptions && Array.isArray(data.stockOptions)) {
                         stockOptions = data.stockOptions;
                         updateStockDropdown();
+                    }
+
+                    if (data.marginRatios && Array.isArray(data.marginRatios)) {
+                        marginRatios = data.marginRatios;
+                        updateMarginDropdown();
                     }
 
                     if (data.averagingUpRates && Array.isArray(data.averagingUpRates)) {
@@ -2041,21 +2176,25 @@
                 });
             });
 
-            // Custom stock input
+            // Custom inputs
             document.getElementById('customStock').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     addNewStock();
                 }
             });
 
-            // Custom averaging up input
+            document.getElementById('customMargin').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addCustomMargin();
+                }
+            });
+
             document.getElementById('customAveragingUp').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     addCustomAveragingUp();
                 }
             });
 
-            // Custom stop loss input
             document.getElementById('customStopLoss').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     addCustomStopLoss();
