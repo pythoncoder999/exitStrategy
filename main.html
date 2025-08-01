@@ -542,21 +542,18 @@
             font-weight: 600;
         }
 
-        /* NEW: Clickable Stock Style */
         .clickable-stock {
             cursor: pointer;
-            color: #2196F3; /* A nice blue color */
+            color: #2196F3;
             font-weight: 600;
             text-decoration: underline;
             transition: color 0.2s ease-in-out;
         }
 
         .clickable-stock:hover {
-            color: #1976D2; /* Darker blue on hover */
+            color: #1976D2;
         }
 
-
-        /* Investment Planning Modal Styles */
         .investment-modal {
             display: none;
             position: fixed;
@@ -965,7 +962,7 @@
             
             <div class="button-group">
                 <button class="add-btn" onclick="addNote()">➕ Add Stock</button>
-                <button class="save-btn" onclick="saveData()">💾 Save Data</button>
+                <button class="save-btn" onclick="saveDataAs()">💾 Save As</button>
                 <button class="upload-btn" onclick="document.getElementById('fileInput').click()">📁 Upload Data</button>
                 <button class="clear-btn" onclick="clearAll()">🗑️ Clear All</button>
             </div>
@@ -1034,7 +1031,7 @@
                                 </tr>
                             </thead>
                             <tbody id="investmentPlanTableBody">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -1053,7 +1050,7 @@
                                 </tr>
                             </thead>
                             <tbody id="exitPlanTableBody">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                     <div class="exit-summary" style="margin-top: 20px;">
@@ -1072,64 +1069,40 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            loadNotes();
             loadDropdownOptions();
-            calculateWeightedAverage(); // Initial calculation on load
+            calculateWeightedAverage();
         });
 
         // --- Weighted Average Calculator Logic ---
-        // Function to parse input, handling various numeric formats including commas as decimal or thousands separators
         function parseInput(value) {
             if (typeof value !== 'string') {
-                value = String(value); // Ensure it's a string
+                value = String(value);
             }
-            // First, remove any common thousands separators (e.g., comma, space) followed by digits
-            // This regex specifically targets commas/spaces that are NOT decimal separators in locales that use comma as decimal.
-            // Example: "1,234.56" -> "1234.56"
-            // Example: "1.234,56" (European style) -> This step won't touch it.
-            let cleanedValue = value.replace(/[, ](?=\d{3})/g, ''); 
-            
-            // Then, if the last comma is followed by 1-2 digits (common for decimals in some locales), treat it as a decimal point.
-            // This is a common heuristic for European decimal format (e.g., 123,45 becomes 123.45)
-            // It tries to be smart about 44.4,444 by converting the LAST comma to a dot if it seems like a decimal.
+            let cleanedValue = value.replace(/[, ](?=\d{3})/g, '');
             if (cleanedValue.match(/,\d{1,2}$/)) {
                 cleanedValue = cleanedValue.replace(/,/g, '.');
             } else {
-                 // As a fallback, if no specific decimal pattern is found, just replace all commas with nothing
-                 // This ensures "44,444" becomes "44444" and not "44.444" unless it explicitly has a dot.
                 cleanedValue = cleanedValue.replace(/,/g, '');
             }
-
-
-            // Finally, parse to float. If the result is NaN, return 0.
             return parseFloat(cleanedValue) || 0;
         }
 
-        // Function to format numbers (ensuring dot as decimal and comma as thousands)
         function formatNumber(num, decimalPlaces) {
             if (isNaN(num)) return '';
-            
-            // Use toFixed to get the desired decimal places, which returns a string
             let fixedNum = num.toFixed(decimalPlaces);
-
-            // Split into integer and decimal parts
             let parts = fixedNum.split('.');
             let integerPart = parts[0];
             let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
-
-            // Add comma as thousands separator to the integer part
             integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
             return integerPart + decimalPart;
         }
 
         function calculateWeightedAverage() {
             const price1 = parseInput(document.getElementById('price1').value);
-            let volume1 = parseInput(document.getElementById('volume1').value); // Volume can be negative for selling
+            let volume1 = parseInput(document.getElementById('volume1').value);
             const price2 = parseInput(document.getElementById('price2').value);
-            let volume2 = parseInput(document.getElementById('volume2').value); // Volume can be negative for selling
+            let volume2 = parseInput(document.getElementById('volume2').value);
 
-            // If a volume is 0, consider its value 0 in calculations
             const value1 = price1 * volume1;
             const value2 = price2 * volume2;
 
@@ -1142,8 +1115,6 @@
             const totalVolumeSpan = document.getElementById('totalVolume');
             const transferBtn = document.getElementById('transferBtn');
 
-            // The condition to hide the result and disable the button needs to be careful
-            // if totalVolume becomes 0 due to a sell-off.
             if (isNaN(totalValue) || isNaN(totalVolume) || (totalVolume === 0 && totalValue === 0)) {
                 resultBox.style.display = 'none';
                 transferBtn.disabled = true;
@@ -1153,25 +1124,22 @@
             } else {
                 resultBox.style.display = 'block';
                 transferBtn.disabled = false;
-                const weightedAverage = totalVolume !== 0 ? totalValue / totalVolume : 0; // Handle division by zero
+                const weightedAverage = totalVolume !== 0 ? totalValue / totalVolume : 0;
                 weightedAverageResult.textContent = `$${formatNumber(weightedAverage, 4)}`;
                 totalValueSpan.textContent = formatNumber(totalValue, 2);
-                totalVolumeSpan.textContent = formatNumber(totalVolume, 0); // Volume as integer
+                totalVolumeSpan.textContent = formatNumber(totalVolume, 0);
             }
         }
 
         function transferToTarget() {
             const weightedAverageResultText = document.getElementById('weightedAverageResult').textContent;
-
-            // Use parseInput directly, it's now designed to handle various formats
             const weightedAveragePrice = parseInput(weightedAverageResultText.replace('$', ''));
 
             if (!isNaN(weightedAveragePrice) && weightedAveragePrice > 0) {
                 document.getElementById('targetInput').value = weightedAveragePrice.toFixed(2);
-                calculatePercentageChange(); // Recalculate based on new target
+                calculatePercentageChange();
                 showMessage('Weighted average transferred to Target Price.', 'success');
             } else {
-                // This will also catch cases where weightedAveragePrice is 0 or NaN
                 showMessage('Weighted average price must be a valid positive number to transfer.', 'error');
             }
         }
@@ -1182,6 +1150,7 @@
         let marginOptions = [20, 25, 30, 100];
         let averagingUpOptions = [3, 5, 7, 10, 15];
         let stopLossOptions = [5, 7, 10, 15, 20];
+        let fileHandle = null;
 
         function showMessage(message, type) {
             const statusMessage = document.getElementById('statusMessage');
@@ -1206,11 +1175,11 @@
 
         function populateDropdown(selectId, optionsArray, suffix = '') {
             const select = document.getElementById(selectId);
-            select.innerHTML = ''; // Clear existing options
+            select.innerHTML = '';
             if (selectId === 'stockSelect') {
                 select.add(new Option('Select stock...', ''));
             } else {
-                select.add(new Option('Select...', '')); // Default for other dropdowns
+                select.add(new Option('Select...', ''));
             }
             optionsArray.forEach(option => {
                 select.add(new Option(`${option}${suffix}`, option));
@@ -1225,16 +1194,15 @@
                 const div = document.createElement('div');
                 div.className = 'dropdown-item';
                 div.innerHTML = `<span>${item}${suffix}</span>
-                                <button class="remove-item-btn" onclick="removeItem('${selectId}', ${typeof item === 'string' ? `'${item}'` : item})">x</button>`; // Handle string vs number for removal
+                                <button class="remove-item-btn" onclick="removeItem('${selectId}', ${typeof item === 'string' ? `'${item}'` : item})">x</button>`;
                 container.appendChild(div);
             });
         }
 
         function addItem(selectId, inputValue, optionsArray, suffix = '', label) {
-            const value = parseInput(inputValue); // Use parseInput for consistency
+            const value = parseInput(inputValue);
             let itemToAdd = value;
 
-            // Special handling for stock: it's a string
             if (selectId === 'stockSelect') {
                 itemToAdd = inputValue.trim().toUpperCase();
                 if (!itemToAdd || optionsArray.includes(itemToAdd)) {
@@ -1250,7 +1218,6 @@
             
             optionsArray.push(itemToAdd);
             optionsArray.sort((a, b) => {
-                // Ensure correct sorting for numbers and strings
                 if (typeof a === 'string' && typeof b === 'string') {
                     return a.localeCompare(b);
                 }
@@ -1266,10 +1233,7 @@
         }
 
         function removeItem(selectId, itemToRemove) {
-            let optionsArray;
-            let containerId;
-            let suffix = '';
-            let label = '';
+            let optionsArray, containerId, suffix = '', label = '';
 
             if (selectId === 'stockSelect') {
                 optionsArray = stockOptions;
@@ -1325,7 +1289,6 @@
             manager.style.display = manager.style.display === 'none' ? 'block' : 'none';
         }
 
-        // Similar functions for Margin, Averaging Up, Stop Loss
         function checkCustomMargin() {
             const select = document.getElementById('marginSelect');
             const customInput = document.getElementById('customMargin');
@@ -1343,7 +1306,7 @@
         function addCustomMargin() {
             const customInput = document.getElementById('customMargin');
             addItem('marginSelect', customInput.value, marginOptions, '%', 'Margin');
-            calculateAvailable(); // Recalculate after adding margin
+            calculateAvailable();
         }
 
         function toggleMarginManager() {
@@ -1419,7 +1382,7 @@
             } else {
                 percentageInput.className = 'percentage-input down-percentage';
             }
-            calculateAvailable(); // Recalculate available based on potential percentage change
+            calculateAvailable();
         }
 
         function calculateAvailable() {
@@ -1430,8 +1393,6 @@
             if (!isNaN(investmentAmount) && investmentAmount > 0 && !isNaN(marginRatio) && marginRatio > 0) {
                 availableAmount = (investmentAmount / (marginRatio / 100)) - investmentAmount;
             }
-            // This part of `calculateAvailable` is meant for notes. 
-            // It doesn't directly affect the weighted average calculation, but it's good to keep it for the notes section.
         }
 
         function addNote() {
@@ -1445,7 +1406,7 @@
             const investmentAmount = parseInput(document.getElementById('investmentInput').value);
 
             if (!stock || current === 0 || target === 0 || margin === 0 || investmentAmount === 0 || isNaN(current) || isNaN(target) || isNaN(margin) || isNaN(investmentAmount)) {
-                showMessage('Please fill in all required fields (Stock, Current Price, Target, Margin Ratio, Investment Amount) with valid numbers.', 'error');
+                showMessage('Please fill in all required fields with valid numbers.', 'error');
                 return;
             }
 
@@ -1455,24 +1416,28 @@
             const available = (investmentAmount / (margin / 100)) - investmentAmount;
 
             const note = {
-                id: Date.now(), // Unique ID for each note
+                id: Date.now(),
                 dateTime,
                 stock,
                 current,
                 target,
                 percentageChange,
-                margin, // Renamed from marginRatio for consistency
-                available, // Renamed from availableToInvest for consistency
+                margin,
+                available,
                 investmentAmount,
                 averagingUpRate,
                 stopLossRate,
-                investmentPlan: [], // To store calculated investment steps
-                exitPlan: [] // To store calculated exit steps
+                investmentPlan: [],
+                exitPlan: []
             };
 
             stockNotes.push(note);
             renderNotesTable();
-            saveData();
+            if (fileHandle) {
+                saveData(fileHandle);
+            } else {
+                saveDataAs();
+            }
             clearInputs();
             showMessage('Stock note added successfully!', 'success');
         }
@@ -1488,26 +1453,25 @@
 
                 row.insertCell().textContent = note.dateTime;
 
-                // Make the stock name clickable
                 const stockCell = row.insertCell();
                 const stockSpan = document.createElement('span');
                 stockSpan.textContent = note.stock;
-                stockSpan.classList.add('clickable-stock'); // Add a class for styling/identification
-                stockSpan.onclick = () => loadNoteIntoInputs(note.id); // Call new function on click
+                stockSpan.classList.add('clickable-stock');
+                stockSpan.onclick = () => loadNoteIntoInputs(note.id);
                 stockCell.appendChild(stockSpan);
                 
                 row.insertCell().textContent = formatNumber(note.current, 2);
                 row.insertCell().classList.add('target-cell');
-                row.insertCell().textContent = formatNumber(note.target, 2);
+                row.cells[3].textContent = formatNumber(note.target, 2);
                 
                 const percentageCell = row.insertCell();
                 percentageCell.textContent = `${formatNumber(note.percentageChange, 2)}%`;
                 percentageCell.classList.add(note.percentageChange >= 0 ? 'up-percentage' : 'down-percentage');
 
                 row.insertCell().classList.add('margin-cell');
-                row.insertCell().textContent = `${note.margin}%`;
+                row.cells[5].textContent = `${note.margin}%`;
                 row.insertCell().classList.add('available-cell');
-                row.insertCell().textContent = `$${formatNumber(note.available, 2)}`;
+                row.cells[6].textContent = `$${formatNumber(note.available, 2)}`;
 
                 const planButtonCell = row.insertCell();
                 const planButton = document.createElement('button');
@@ -1528,7 +1492,9 @@
         function deleteNote(id) {
             stockNotes = stockNotes.filter(note => note.id !== id);
             renderNotesTable();
-            saveData();
+            if (fileHandle) {
+                saveData(fileHandle);
+            }
             showMessage('Stock note deleted.', 'success');
         }
 
@@ -1537,13 +1503,12 @@
             document.getElementById('currentInput').value = '';
             document.getElementById('targetInput').value = '';
             document.getElementById('percentageInput').value = '';
-            document.getElementById('percentageInput').className = 'percentage-input'; // Reset class
-            document.getElementById('marginSelect').value = '20'; // Reset to default
-            document.getElementById('averagingUpSelect').value = '3'; // Reset to default
-            document.getElementById('stopLossSelect').value = '5'; // Reset to default
+            document.getElementById('percentageInput').className = 'percentage-input';
+            document.getElementById('marginSelect').value = '20';
+            document.getElementById('averagingUpSelect').value = '3';
+            document.getElementById('stopLossSelect').value = '5';
             document.getElementById('investmentInput').value = '';
 
-            // Hide custom input fields and their add buttons
             document.getElementById('customStock').style.display = 'none';
             document.getElementById('addStockBtn').style.display = 'none';
             document.getElementById('customMargin').style.display = 'none';
@@ -1554,64 +1519,44 @@
             document.getElementById('addStopLossBtn').style.display = 'none';
         }
 
-        function saveData() {
-            localStorage.setItem('stockNotes', JSON.stringify(stockNotes));
-            localStorage.setItem('stockOptions', JSON.stringify(stockOptions));
-            localStorage.setItem('marginOptions', JSON.stringify(marginOptions));
-            localStorage.setItem('averagingUpOptions', JSON.stringify(averagingUpOptions));
-            localStorage.setItem('stopLossOptions', JSON.stringify(stopLossOptions));
-            showMessage('Data saved to local storage!', 'success');
-        }
+        async function saveDataAs() {
+            if (!window.showSaveFilePicker) {
+                showMessage('File System Access API is not supported in this browser. Try Chrome or Edge.', 'error');
+                return;
+            }
 
-        function loadNotes() {
-            const savedNotes = localStorage.getItem('stockNotes');
-            if (savedNotes) {
-                stockNotes = JSON.parse(savedNotes);
-                // Ensure default investmentPlan and exitPlan if not present from older saves
-                stockNotes.forEach(note => {
-                    if (!note.investmentPlan) note.investmentPlan = [];
-                    if (!note.exitPlan) note.exitPlan = [];
+            try {
+                const newFileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'stock_notes.json',
+                    types: [{
+                        description: 'JSON Files',
+                        accept: { 'application/json': ['.json'] }
+                    }]
                 });
-                renderNotesTable();
-                showMessage('Notes loaded from local storage.', 'success');
+                await saveData(newFileHandle);
+                fileHandle = newFileHandle;
+                showMessage('Data saved successfully!', 'success');
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    showMessage('Error saving file: ' + error.message, 'error');
+                }
             }
-
-            const savedStocks = localStorage.getItem('stockOptions');
-            if (savedStocks) {
-                stockOptions = JSON.parse(savedStocks);
-            }
-            const savedMargins = localStorage.getItem('marginOptions');
-            if (savedMargins) {
-                marginOptions = JSON.parse(savedMargins);
-            }
-            const savedAveragingUp = localStorage.getItem('averagingUpOptions');
-            if (savedAveragingUp) {
-                averagingUpOptions = JSON.parse(savedAveragingUp);
-            }
-            const savedStopLoss = localStorage.getItem('stopLossOptions');
-            if (savedStopLoss) {
-                stopLossOptions = JSON.parse(savedStopLoss);
-            }
-            loadDropdownOptions(); // Reload dropdowns with saved options
         }
 
-        function clearAll() {
-            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                stockNotes = [];
-                renderNotesTable();
-                localStorage.removeItem('stockNotes');
-                // Reset dropdown options to default
-                stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
-                marginOptions = [20, 25, 30, 100];
-                averagingUpOptions = [3, 5, 7, 10, 15];
-                stopLossOptions = [5, 7, 10, 15, 20];
-                localStorage.removeItem('stockOptions');
-                localStorage.removeItem('marginOptions');
-                localStorage.removeItem('averagingUpOptions');
-                localStorage.removeItem('stopLossOptions');
-                loadDropdownOptions(); // Re-populate with default options
-                clearInputs();
-                showMessage('All data cleared!', 'success');
+        async function saveData(handle) {
+            try {
+                const data = {
+                    stockNotes,
+                    stockOptions,
+                    marginOptions,
+                    averagingUpOptions,
+                    stopLossOptions
+                };
+                const writable = await handle.createWritable();
+                await writable.write(JSON.stringify(data, null, 2));
+                await writable.close();
+            } catch (error) {
+                showMessage('Error writing to file: ' + error.message, 'error');
             }
         }
 
@@ -1628,58 +1573,48 @@
                         let newAveragingUpOptions = new Set(averagingUpOptions);
                         let newStopLossOptions = new Set(stopLossOptions);
 
-                        // Check for 'notes' or 'stockNotes' key
-                        const sourceNotes = data.notes || data.stockNotes; 
+                        const sourceNotes = data.notes || data.stockNotes;
 
                         if (sourceNotes && Array.isArray(sourceNotes)) {
                             uploadedNotes = sourceNotes.map(note => {
-                                // Map keys from the uploaded JSON to the expected keys
                                 const mappedNote = {
-                                    id: note.id || Date.now() + Math.random(), // Ensure unique ID
-                                    dateTime: note.datetime || new Date().toLocaleString(), // Handle datetime
+                                    id: note.id || Date.now() + Math.random(),
+                                    dateTime: note.datetime || new Date().toLocaleString(),
                                     stock: note.stock,
                                     current: note.current,
                                     target: note.target,
-                                    percentageChange: note.percentage, // Map 'percentage' to 'percentageChange'
-                                    margin: note.marginRatio || note.margin, // Map 'marginRatio' or 'margin'
-                                    available: note.availableToInvest || note.available, // Map 'availableToInvest' or 'available'
+                                    percentageChange: note.percentage || note.percentageChange,
+                                    margin: note.marginRatio || note.margin,
+                                    available: note.availableToInvest || note.available,
                                     investmentAmount: note.investmentAmount,
                                     averagingUpRate: note.averagingUpRate,
                                     stopLossRate: note.stopLossRate,
-                                    investmentPlan: note.investmentPlan || [], // Keep existing or default
-                                    exitPlan: note.exitPlan || [] // Keep existing or default
+                                    investmentPlan: note.investmentPlan || [],
+                                    exitPlan: note.exitPlan || []
                                 };
-                                // Add stock to options if new
                                 if (mappedNote.stock && !stockOptions.includes(mappedNote.stock)) {
                                     newStockOptions.add(mappedNote.stock);
                                 }
-                                // Add margin to options if new
                                 if (mappedNote.margin && !marginOptions.includes(mappedNote.margin)) {
                                     newMarginOptions.add(mappedNote.margin);
                                 }
-                                // Add averagingUpRate to options if new
                                 if (mappedNote.averagingUpRate && !averagingUpOptions.includes(mappedNote.averagingUpRate)) {
                                     newAveragingUpOptions.add(mappedNote.averagingUpRate);
                                 }
-                                // Add stopLossRate to options if new
                                 if (mappedNote.stopLossRate && !stopLossOptions.includes(mappedNote.stopLossRate)) {
                                     newStopLossOptions.add(mappedNote.stopLossRate);
                                 }
                                 return mappedNote;
                             });
 
-                            stockNotes = uploadedNotes; // Replace current notes with uploaded ones
-
-                            // Update dropdown options, convert Sets back to sorted Arrays
-                            stockOptions = Array.from(newStockOptions).sort((a,b) => a.localeCompare(b));
-                            marginOptions = Array.from(newMarginOptions).sort((a,b) => a - b);
-                            averagingUpOptions = Array.from(newAveragingUpOptions).sort((a,b) => a - b);
-                            stopLossOptions = Array.from(newStopLossOptions).sort((a,b) => a - b);
-
+                            stockNotes = uploadedNotes;
+                            stockOptions = Array.from(newStockOptions).sort((a, b) => a.localeCompare(b));
+                            marginOptions = Array.from(newMarginOptions).sort((a, b) => a - b);
+                            averagingUpOptions = Array.from(newAveragingUpOptions).sort((a, b) => a - b);
+                            stopLossOptions = Array.from(newStopLossOptions).sort((a, b) => a - b);
 
                             renderNotesTable();
-                            loadDropdownOptions(); // Re-populate dropdowns with updated options
-                            saveData(); // Save uploaded data to local storage
+                            loadDropdownOptions();
                             showMessage('Data uploaded and loaded successfully!', 'success');
                         } else {
                             showMessage('Invalid JSON file format. Expected "notes" or "stockNotes" array.', 'error');
@@ -1694,7 +1629,22 @@
             }
         }
 
-        let sortDirection = {}; // To keep track of sort direction for each column
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                stockNotes = [];
+                renderNotesTable();
+                stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+                marginOptions = [20, 25, 30, 100];
+                averagingUpOptions = [3, 5, 7, 10, 15];
+                stopLossOptions = [5, 7, 10, 15, 20];
+                fileHandle = null;
+                loadDropdownOptions();
+                clearInputs();
+                showMessage('All data cleared!', 'success');
+            }
+        }
+
+        let sortDirection = {};
         function sortBy(column) {
             const currentSortDir = sortDirection[column] || 'asc';
             const newSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
@@ -1735,44 +1685,29 @@
             });
         }
 
-        // Function to load note data into input fields
         function loadNoteIntoInputs(noteId) {
             const noteToLoad = stockNotes.find(note => note.id === noteId);
 
             if (noteToLoad) {
-                // Populate the dropdowns first to ensure options are available
                 document.getElementById('stockSelect').value = noteToLoad.stock;
-                // Ensure custom stock field is hidden if a standard stock is selected
                 checkCustomStock();
-
                 document.getElementById('marginSelect').value = noteToLoad.margin;
-                checkCustomMargin(); // Hide custom margin field if standard margin selected
-
+                checkCustomMargin();
                 document.getElementById('averagingUpSelect').value = noteToLoad.averagingUpRate;
-                checkCustomAveragingUp(); // Hide custom avg up field if standard rate selected
-
+                checkCustomAveragingUp();
                 document.getElementById('stopLossSelect').value = noteToLoad.stopLossRate;
-                checkCustomStopLoss(); // Hide custom stop loss field if standard rate selected
-
-                // Populate the input fields
+                checkCustomStopLoss();
                 document.getElementById('currentInput').value = noteToLoad.current;
                 document.getElementById('targetInput').value = noteToLoad.target;
                 document.getElementById('investmentInput').value = noteToLoad.investmentAmount;
-
-                // Recalculate percentage change based on loaded current and target
                 calculatePercentageChange();
-
                 showMessage(`Note for ${noteToLoad.stock} loaded into inputs.`, 'success');
-
-                // You might want to scroll to the top of the notes section for better UX
                 document.querySelector('.notes-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
             } else {
                 showMessage('Error: Could not find the selected note.', 'error');
             }
         }
 
-        // --- Investment Planning Modal Functions ---
         let currentModalNoteId = null;
 
         function openInvestmentModal(noteId) {
@@ -1784,19 +1719,10 @@
             }
 
             document.getElementById('modalStockName').textContent = note.stock;
-            
-            // Recalculate and display overall position (important if inputs were changed)
             calculateOverallPosition(note);
-
-            // Populate Investment Plan (re-generates if empty, or just renders existing)
             populateInvestmentPlan(note);
-
-            // Populate Exit Plan (re-generates if empty, or just renders existing)
             populateExitPlan(note);
-
-            // Update Progress Bar
             updateInvestmentProgressBar();
-
             document.getElementById('investmentModal').style.display = 'block';
         }
 
@@ -1816,12 +1742,10 @@
                 }
             });
 
-            // Account for any sales from the exit plan
             note.exitPlan.forEach(step => {
                 if (step.status === 'exited') {
-                    // For exit steps, subtract the volume and value as they represent shares sold
-                    totalInvestedValue -= step.amount; 
-                    totalInvestedVolume -= step.quantity; 
+                    totalInvestedValue -= step.amount;
+                    totalInvestedVolume -= step.quantity;
                 }
             });
 
@@ -1835,35 +1759,30 @@
             tableBody.innerHTML = '';
             
             let currentPrice = note.current;
-            const averagingUpRate = note.averagingUpRate / 100; // Convert to decimal
+            const averagingUpRate = note.averagingUpRate / 100;
             const investmentAmount = note.investmentAmount;
 
-            // Generate initial plan if it doesn't exist or is empty, AND there's an investment amount
             if (note.investmentPlan.length === 0 && investmentAmount > 0 && currentPrice > 0) {
-                let plannedBuys = 3; 
+                let plannedBuys = 3;
                 let amountPerBuy = investmentAmount / plannedBuys;
 
                 for (let i = 0; i < plannedBuys; i++) {
-                    // This creates price levels going down for "averaging down" behavior,
-                    // or for buying at the current price and subsequent dips.
                     let priceLevel = currentPrice * (1 - (averagingUpRate * i));
-                    if (priceLevel <= 0) priceLevel = 0.01; // Ensure price is never zero or negative
-
+                    if (priceLevel <= 0) priceLevel = 0.01;
                     const quantity = amountPerBuy > 0 && priceLevel > 0 ? amountPerBuy / priceLevel : 0;
                     
                     const step = {
                         price: priceLevel,
                         quantity: quantity,
                         amount: amountPerBuy,
-                        status: 'pending' 
+                        status: 'pending'
                     };
                     note.investmentPlan.push(step);
                 }
-                note.investmentPlan.sort((a, b) => b.price - a.price); // Sort descending by price
-                saveData(); // Save the newly generated plan
+                note.investmentPlan.sort((a, b) => b.price - a.price);
+                if (fileHandle) saveData(fileHandle);
             }
 
-            // Render the plan
             note.investmentPlan.forEach((step, index) => {
                 const row = tableBody.insertRow();
                 const checkboxCell = row.insertCell();
@@ -1883,17 +1802,17 @@
                 statusCell.className = `investment-status status-${step.status}`;
                 statusCell.textContent = step.status;
             });
-            calculateOverallPosition(note); // Recalculate after updating plan
+            calculateOverallPosition(note);
         }
 
         function toggleInvestmentStatus(noteId, stepIndex, isChecked) {
             const note = stockNotes.find(n => n.id === noteId);
             if (note && note.investmentPlan[stepIndex]) {
                 note.investmentPlan[stepIndex].status = isChecked ? 'completed' : 'pending';
-                saveData();
-                populateInvestmentPlan(note); // Re-render to update UI
+                if (fileHandle) saveData(fileHandle);
+                populateInvestmentPlan(note);
                 updateInvestmentProgressBar();
-                calculateOverallPosition(note); // Recalculate overall position
+                calculateOverallPosition(note);
                 showMessage(`Investment step ${isChecked ? 'completed' : 'marked pending'}.`, 'success');
             }
         }
@@ -1903,41 +1822,34 @@
             tableBody.innerHTML = '';
 
             let currentPrice = note.current;
-            const stopLossRate = note.stopLossRate / 100; // Convert to decimal
-
-            // Get total invested volume from completed investment steps
+            const stopLossRate = note.stopLossRate / 100;
             const totalInvestedVolume = note.investmentPlan.reduce((sum, step) => sum + (step.status === 'completed' ? step.quantity : 0), 0);
 
-            // Re-generate exit plan if it's empty OR if the totalInvestedVolume has changed (meaning buys happened)
-            // This ensures the exit plan is always based on the current completed buy volume.
             if (totalInvestedVolume > 0 && (note.exitPlan.length === 0 || 
                 note.exitPlan.reduce((sum, step) => sum + step.quantity, 0) !== totalInvestedVolume)) {
                 
-                note.exitPlan = []; // Clear old plan if volume changed or it's empty
-                let plannedSells = 3; 
+                note.exitPlan = [];
+                let plannedSells = 3;
                 let volumePerSell = totalInvestedVolume / plannedSells;
 
                 for (let i = 0; i < plannedSells; i++) {
-                    // This generates price levels going up from current for profit taking
-                    let priceLevel = currentPrice * (1 + (stopLossRate * (i + 1))); // Start from 1 for profit
-                    if (priceLevel <= 0) priceLevel = 0.01; // Ensure price is never zero or negative
-
-                    const amount = volumePerSell * priceLevel; 
+                    let priceLevel = currentPrice * (1 + (stopLossRate * (i + 1)));
+                    if (priceLevel <= 0) priceLevel = 0.01;
+                    const amount = volumePerSell * priceLevel;
                     
                     const step = {
                         price: priceLevel,
-                        quantity: volumePerSell, 
+                        quantity: volumePerSell,
                         amount: amount,
-                        status: 'pending' 
+                        status: 'pending'
                     };
                     note.exitPlan.push(step);
                 }
-                note.exitPlan.sort((a, b) => a.price - b.price); // Sort ascending by price
-                saveData(); // Save the newly generated plan
+                note.exitPlan.sort((a, b) => a.price - b.price);
+                if (fileHandle) saveData(fileHandle);
             }
 
-
-            let currentRemainingVolume = totalInvestedVolume; // Start with total bought volume
+            let currentRemainingVolume = totalInvestedVolume;
             let currentRemainingValue = note.investmentPlan.reduce((sum, step) => sum + (step.status === 'completed' ? step.amount : 0), 0);
 
             note.exitPlan.forEach((step, index) => {
@@ -1951,7 +1863,7 @@
 
                 row.insertCell().classList.add('price-level');
                 row.cells[1].textContent = `$${formatNumber(step.price, 2)}`;
-                row.insertCell().textContent = formatNumber(step.quantity, 0); // Display positive volume here
+                row.insertCell().textContent = formatNumber(step.quantity, 0);
                 row.insertCell().classList.add('exit-amount');
                 row.cells[3].textContent = `$${formatNumber(step.amount, 2)}`;
                 
@@ -1968,17 +1880,17 @@
             document.getElementById('remainingExitVolume').textContent = formatNumber(currentRemainingVolume, 0);
             document.getElementById('remainingExitValue').textContent = `$${formatNumber(currentRemainingValue, 2)}`;
             
-            calculateOverallPosition(note); // Recalculate after updating plan
+            calculateOverallPosition(note);
         }
 
         function toggleExitStatus(noteId, stepIndex, isChecked) {
             const note = stockNotes.find(n => n.id === noteId);
             if (note && note.exitPlan[stepIndex]) {
                 note.exitPlan[stepIndex].status = isChecked ? 'exited' : 'pending';
-                saveData();
-                populateExitPlan(note); // Re-render to update UI and remaining position
-                updateInvestmentProgressBar(); // Progress bar reflects investment completion
-                calculateOverallPosition(note); // Recalculate overall position
+                if (fileHandle) saveData(fileHandle);
+                populateExitPlan(note);
+                updateInvestmentProgressBar();
+                calculateOverallPosition(note);
                 showMessage(`Exit step ${isChecked ? 'completed' : 'marked pending'}.`, 'success');
             }
         }
@@ -1998,9 +1910,6 @@
             document.getElementById('investmentProgressBar').style.width = `${progress}%`;
             document.getElementById('investmentProgressText').textContent = `${progress.toFixed(0)}% Completed`;
         }
-
-        // Initial load of notes and dropdowns
-        loadNotes();
     </script>
 </body>
 </html>
