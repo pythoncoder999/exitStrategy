@@ -542,6 +542,20 @@
             font-weight: 600;
         }
 
+        /* NEW: Clickable Stock Style */
+        .clickable-stock {
+            cursor: pointer;
+            color: #2196F3; /* A nice blue color */
+            font-weight: 600;
+            text-decoration: underline;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .clickable-stock:hover {
+            color: #1976D2; /* Darker blue on hover */
+        }
+
+
         /* Investment Planning Modal Styles */
         .investment-modal {
             display: none;
@@ -1492,7 +1506,16 @@
                 row.setAttribute('data-id', note.id);
 
                 row.insertCell().textContent = note.dateTime;
-                row.insertCell().textContent = note.stock;
+
+                // NEW: Make the stock name clickable
+                const stockCell = row.insertCell();
+                const stockSpan = document.createElement('span');
+                stockSpan.textContent = note.stock;
+                stockSpan.classList.add('clickable-stock'); // Add a class for styling/identification
+                stockSpan.onclick = () => loadNoteIntoInputs(note.id); // Call new function on click
+                stockCell.appendChild(stockSpan);
+                // END NEW
+
                 row.insertCell().textContent = formatNumber(note.current, 2);
                 row.insertCell().classList.add('target-cell');
                 row.insertCell().textContent = formatNumber(note.target, 2);
@@ -1667,6 +1690,44 @@
                 btn.textContent = `${col.charAt(0).toUpperCase() + col.slice(1)} ${arrow}`;
             });
         }
+
+        // NEW: Function to load note data into input fields
+        function loadNoteIntoInputs(noteId) {
+            const noteToLoad = stockNotes.find(note => note.id === noteId);
+
+            if (noteToLoad) {
+                // Populate the dropdowns first to ensure options are available
+                document.getElementById('stockSelect').value = noteToLoad.stock;
+                // Ensure custom stock field is hidden if a standard stock is selected
+                checkCustomStock();
+
+                document.getElementById('marginSelect').value = noteToLoad.margin;
+                checkCustomMargin(); // Hide custom margin field if standard margin selected
+
+                document.getElementById('averagingUpSelect').value = noteToLoad.averagingUpRate;
+                checkCustomAveragingUp(); // Hide custom avg up field if standard rate selected
+
+                document.getElementById('stopLossSelect').value = noteToLoad.stopLossRate;
+                checkCustomStopLoss(); // Hide custom stop loss field if standard rate selected
+
+                // Populate the input fields
+                document.getElementById('currentInput').value = noteToLoad.current;
+                document.getElementById('targetInput').value = noteToLoad.target;
+                document.getElementById('investmentInput').value = noteToLoad.investmentAmount;
+
+                // Recalculate percentage change based on loaded current and target
+                calculatePercentageChange();
+
+                showMessage(`Note for ${noteToLoad.stock} loaded into inputs.`, 'success');
+
+                // You might want to scroll to the top of the notes section for better UX
+                document.querySelector('.notes-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } else {
+                showMessage('Error: Could not find the selected note.', 'error');
+            }
+        }
+        // END NEW
 
         // --- Investment Planning Modal Functions ---
         let currentModalNoteId = null;
