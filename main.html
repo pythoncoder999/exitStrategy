@@ -1436,7 +1436,7 @@
             if (fileHandle) {
                 saveData(fileHandle);
             } else {
-                saveDataAs();
+                showMessage('Please save the updated data using "Save As".', 'success');
             }
             clearInputs();
             showMessage('Stock note added successfully!', 'success');
@@ -1494,6 +1494,8 @@
             renderNotesTable();
             if (fileHandle) {
                 saveData(fileHandle);
+            } else {
+                showMessage('Note deleted. Please save the updated data using "Save As".', 'success');
             }
             showMessage('Stock note deleted.', 'success');
         }
@@ -1520,30 +1522,63 @@
         }
 
         async function saveDataAs() {
-            if (!window.showSaveFilePicker) {
-                showMessage('File System Access API is not supported in this browser. Try Chrome or Edge.', 'error');
-                return;
-            }
+            const data = {
+                stockNotes,
+                stockOptions,
+                marginOptions,
+                averagingUpOptions,
+                stopLossOptions
+            };
+            const jsonData = JSON.stringify(data, null, 2);
 
-            try {
-                const newFileHandle = await window.showSaveFilePicker({
-                    suggestedName: 'stock_notes.json',
-                    types: [{
-                        description: 'JSON Files',
-                        accept: { 'application/json': ['.json'] }
-                    }]
-                });
-                await saveData(newFileHandle);
-                fileHandle = newFileHandle;
-                showMessage('Data saved successfully!', 'success');
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    showMessage('Error saving file: ' + error.message, 'error');
+            if (window.showSaveFilePicker) {
+                try {
+                    const newFileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'stock_notes.json',
+                        types: [{
+                            description: 'JSON Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    });
+                    await saveData(newFileHandle);
+                    fileHandle = newFileHandle;
+                    showMessage('Data saved successfully!', 'success');
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        showMessage('Error saving file: File System Access API is not supported or another error occurred.', 'error');
+                        // Fallback to download if File System Access API fails
+                        downloadJson(jsonData);
+                    }
                 }
+            } else {
+                // Fallback for browsers without File System Access API
+                downloadJson(jsonData);
+            }
+        }
+
+        function downloadJson(jsonData) {
+            try {
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'stock_notes.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                fileHandle = null; // Ensure no fileHandle for download method
+                showMessage('Data downloaded as stock_notes.json. Save it manually to update.', 'success');
+            } catch (error) {
+                showMessage('Error downloading file: ' + error.message, 'error');
             }
         }
 
         async function saveData(handle) {
+            if (!handle) {
+                showMessage('No file selected. Please use "Save As" to save changes.', 'error');
+                return;
+            }
             try {
                 const data = {
                     stockNotes,
@@ -1555,6 +1590,7 @@
                 const writable = await handle.createWritable();
                 await writable.write(JSON.stringify(data, null, 2));
                 await writable.close();
+                showMessage('Data updated successfully!', 'success');
             } catch (error) {
                 showMessage('Error writing to file: ' + error.message, 'error');
             }
@@ -1781,6 +1817,7 @@
                 }
                 note.investmentPlan.sort((a, b) => b.price - a.price);
                 if (fileHandle) saveData(fileHandle);
+                else showMessage('Investment plan updated. Please save using "Save As".', 'success');
             }
 
             note.investmentPlan.forEach((step, index) => {
@@ -1810,6 +1847,7 @@
             if (note && note.investmentPlan[stepIndex]) {
                 note.investmentPlan[stepIndex].status = isChecked ? 'completed' : 'pending';
                 if (fileHandle) saveData(fileHandle);
+                else showMessage('Investment step updated. Please save using "Save As".', 'success');
                 populateInvestmentPlan(note);
                 updateInvestmentProgressBar();
                 calculateOverallPosition(note);
@@ -1847,6 +1885,7 @@
                 }
                 note.exitPlan.sort((a, b) => a.price - b.price);
                 if (fileHandle) saveData(fileHandle);
+                else showMessage('Exit plan updated. Please save using "Save As".', 'success');
             }
 
             let currentRemainingVolume = totalInvestedVolume;
@@ -1888,6 +1927,7 @@
             if (note && note.exitPlan[stepIndex]) {
                 note.exitPlan[stepIndex].status = isChecked ? 'exited' : 'pending';
                 if (fileHandle) saveData(fileHandle);
+                else showMessage('Exit step updated. Please save using "Save As".', 'success');
                 populateExitPlan(note);
                 updateInvestmentProgressBar();
                 calculateOverallPosition(note);
@@ -1899,16 +1939,14 @@
             const note = stockNotes.find(n => n.id === currentModalNoteId);
             if (!note) return;
 
-            const totalInvestmentSteps = note.investmentPlan.length;
-            const completedInvestmentSteps = note.investmentPlan.filter(step => step.status === 'completed').length;
-            
-            let progress = 0;
-            if (totalInvestmentSteps > 0) {
-                progress = (completedInvestmentSteps / totalInvestmentSteps) * 100;
-            }
+            const completedSteps = note.investmentPlan.filter(step => step.status === 'completed').length;
+            const totalSteps = note.investmentPlan.length;
+            const progressPercentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
-            document.getElementById('investmentProgressBar').style.width = `${progress}%`;
-            document.getElementById('investmentProgressText').textContent = `${progress.toFixed(0)}% Completed`;
+            const progressBar = document.getElementById('investmentProgressBar');
+            const progressText = document.getElementById('investmentProgressText');
+            progressBar.style.width = `${progressPercentage}%`;
+            progressText.textContent = `${progressPercentage.toFixed(0)}% Completed`;
         }
     </script>
 </body>
