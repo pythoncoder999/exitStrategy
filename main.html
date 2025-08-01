@@ -542,21 +542,18 @@
             font-weight: 600;
         }
 
-        /* NEW: Clickable Stock Style */
         .clickable-stock {
             cursor: pointer;
-            color: #2196F3; /* A nice blue color */
+            color: #2196F3;
             font-weight: 600;
             text-decoration: underline;
             transition: color 0.2s ease-in-out;
         }
 
         .clickable-stock:hover {
-            color: #1976D2; /* Darker blue on hover */
+            color: #1976D2;
         }
 
-
-        /* Investment Planning Modal Styles */
         .investment-modal {
             display: none;
             position: fixed;
@@ -771,6 +768,18 @@
             margin: 5px 0;
         }
 
+        /* Note about data persistence */
+        .persistence-notice {
+            background: rgba(255, 193, 7, 0.1);
+            border: 2px solid rgba(255, 193, 7, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #856404;
+            font-weight: 600;
+        }
+
         @media (max-width: 1200px) {
             .input-row {
                 grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -828,6 +837,10 @@
     <div class="container">
         <h1>📈 Stock Calculator & Notes</h1>
         
+        <div class="persistence-notice">
+            📌 Note: Data is stored in memory during this session. Use "Save Data" to download as JSON file for backup.
+        </div>
+        
         <div class="calculator-section">
             <h2 class="calculator-title">💹 Volume Weighted Average Calculator</h2>
             
@@ -836,96 +849,6 @@
                     <h3 class="series-title">Series 1 (Buy/Sell)</h3>
                     <div class="input-group">
                         <label>Price 1 ($)</label>
-                        <input type="text" id="price1" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
-                    </div>
-                    <div class="input-group">
-                        <label>Volume 1 (units - Positive for Buy, Negative for Sell)</label>
-                        <input type="text" id="volume1" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
-                    </div>
-                </div>
-
-                <div class="series-box series-2">
-                    <h3 class="series-title">Series 2 (Buy/Sell)</h3>
-                    <div class="input-group">
-                        <label>Price 2 ($)</label>
-                        <input type="text" id="price2" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
-                    </div>
-                    <div class="input-group">
-                        <label>Volume 2 (units - Positive for Buy, Negative for Sell)</label>
-                        <input type="text" id="volume2" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
-                    </div>
-                </div>
-            </div>
-
-            <div class="result-box" id="resultBox" style="display: none;">
-                <div style="font-size: 1.2em; margin-bottom: 10px;">Volume Weighted Average Price:</div>
-                <div class="weighted-avg-price" id="weightedAverageResult">$0.0000</div>
-                <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
-                    <div>Total Value: $<span id="totalValue">0</span></div>
-                    <div>Total Volume: <span id="totalVolume">0</span> units</div>
-                </div>
-            </div>
-
-            <div class="transfer-section">
-                <button class="transfer-btn" onclick="transferToTarget()" id="transferBtn" disabled>
-                    📤 Transfer to Target Price
-                </button>
-            </div>
-        </div>
-
-        <div class="notes-section">
-            <h2 class="notes-title">📊 Stock Notes</h2>
-            
-            <div class="input-row">
-                <div class="input-group">
-                    <label for="stockSelect">Stock:</label>
-                    <div class="dropdown-container">
-                        <select id="stockSelect" onchange="checkCustomStock()">
-                            <option value="">Select stock...</option>
-                            <option value="CUSTOM">+ Add New Stock</option>
-                        </select>
-                        <input type="text" id="customStock" placeholder="Enter new stock..." style="display: none; margin-top: 5px;">
-                        <button class="add-new-btn" id="addStockBtn" onclick="addNewStock()" style="display: none;">Add Stock</button>
-                        <button class="manage-btn" onclick="toggleStockManager()">Manage Stocks</button>
-                        <div id="stockManager" class="dropdown-manager" style="display: none;">
-                            <h4>Current Stocks:</h4>
-                            <div id="stockItems" class="dropdown-items"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label for="currentInput">Current Price:</label>
-                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="calculatePercentageChange()" />
-                </div>
-                
-                <div class="input-group">
-                    <label for="targetInput">Target:</label>
-                    <input type="number" id="targetInput" class="target-input" placeholder="Enter target price" oninput="calculatePercentageChange()" />
-                </div>
-                
-                <div class="input-group">
-                    <label for="marginSelect">Margin Ratio:</label>
-                    <div class="dropdown-container">
-                        <select id="marginSelect" class="margin-select" onchange="checkCustomMargin(); calculateAvailable()">
-                            <option value="CUSTOM">+ Custom Margin</option>
-                        </select>
-                        <input type="number" id="customMargin" placeholder="Enter custom margin..." step="1" min="1" max="100" style="display: none; margin-top: 5px;">
-                        <button class="add-new-btn" id="addMarginBtn" onclick="addCustomMargin()" style="display: none;">Add Margin</button>
-                        <button class="manage-btn" onclick="toggleMarginManager()">Manage Margins</button>
-                        <div id="marginManager" class="dropdown-manager" style="display: none;">
-                            <h4>Current Margins:</h4>
-                            <div id="marginItems" class="dropdown-items"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label for="averagingUpSelect">Averaging Up Rate (%):</label>
-                    <div class="dropdown-container">
-                        <select id="averagingUpSelect" class="margin-select" onchange="checkCustomAveragingUp()">
-                            <option value="CUSTOM">+ Custom Rate</option>
-                        </select>
                         <input type="number" id="customAveragingUp" placeholder="Enter custom rate..." step="0.1" min="0.1" max="50" style="display: none; margin-top: 5px;">
                         <button class="add-new-btn" id="addAveragingUpBtn" onclick="addCustomAveragingUp()" style="display: none;">Add Rate</button>
                         <button class="manage-btn" onclick="toggleAveragingUpManager()">Manage Rates</button>
@@ -965,7 +888,7 @@
             
             <div class="button-group">
                 <button class="add-btn" onclick="addNote()">➕ Add Stock</button>
-                <button class="save-btn" onclick="saveData()">💾 Save Data</button>
+                <button class="save-btn" onclick="saveData()">💾 Download Data</button>
                 <button class="upload-btn" onclick="document.getElementById('fileInput').click()">📁 Upload Data</button>
                 <button class="clear-btn" onclick="clearAll()">🗑️ Clear All</button>
             </div>
@@ -1071,53 +994,45 @@
     </div>
 
     <script>
+        // In-memory storage to replace localStorage
+        const appData = {
+            stockNotes: [],
+            stockOptions: ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'],
+            marginOptions: [20, 25, 30, 100],
+            averagingUpOptions: [3, 5, 7, 10, 15],
+            stopLossOptions: [5, 7, 10, 15, 20]
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             loadNotes();
             loadDropdownOptions();
-            calculateWeightedAverage(); // Initial calculation on load
+            calculateWeightedAverage();
         });
 
         // --- Weighted Average Calculator Logic ---
-        // Function to parse input, handling various numeric formats including commas as decimal or thousands separators
         function parseInput(value) {
             if (typeof value !== 'string') {
-                value = String(value); // Ensure it's a string
+                value = String(value);
             }
-            // First, remove any common thousands separators (e.g., comma, space) followed by digits
-            // This regex specifically targets commas/spaces that are NOT decimal separators in locales that use comma as decimal.
-            // Example: "1,234.56" -> "1234.56"
-            // Example: "1.234,56" (European style) -> This step won't touch it.
             let cleanedValue = value.replace(/[, ](?=\d{3})/g, ''); 
             
-            // Then, if the last comma is followed by 1-2 digits (common for decimals in some locales), treat it as a decimal point.
-            // This is a common heuristic for European decimal format (e.g., 123,45 becomes 123.45)
-            // It tries to be smart about 44.4,444 by converting the LAST comma to a dot if it seems like a decimal.
             if (cleanedValue.match(/,\d{1,2}$/)) {
                 cleanedValue = cleanedValue.replace(/,/g, '.');
             } else {
-                 // As a fallback, if no specific decimal pattern is found, just replace all commas with nothing
-                 // This ensures "44,444" becomes "44444" and not "44.444" unless it explicitly has a dot.
                 cleanedValue = cleanedValue.replace(/,/g, '');
             }
 
-
-            // Finally, parse to float. If the result is NaN, return 0.
             return parseFloat(cleanedValue) || 0;
         }
 
-        // Function to format numbers (ensuring dot as decimal and comma as thousands)
         function formatNumber(num, decimalPlaces) {
             if (isNaN(num)) return '';
             
-            // Use toFixed to get the desired decimal places, which returns a string
             let fixedNum = num.toFixed(decimalPlaces);
-
-            // Split into integer and decimal parts
             let parts = fixedNum.split('.');
             let integerPart = parts[0];
             let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
 
-            // Add comma as thousands separator to the integer part
             integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
             return integerPart + decimalPart;
@@ -1125,11 +1040,10 @@
 
         function calculateWeightedAverage() {
             const price1 = parseInput(document.getElementById('price1').value);
-            let volume1 = parseInput(document.getElementById('volume1').value); // Volume can be negative for selling
+            let volume1 = parseInput(document.getElementById('volume1').value);
             const price2 = parseInput(document.getElementById('price2').value);
-            let volume2 = parseInput(document.getElementById('volume2').value); // Volume can be negative for selling
+            let volume2 = parseInput(document.getElementById('volume2').value);
 
-            // If a volume is 0, consider its value 0 in calculations
             const value1 = price1 * volume1;
             const value2 = price2 * volume2;
 
@@ -1142,8 +1056,6 @@
             const totalVolumeSpan = document.getElementById('totalVolume');
             const transferBtn = document.getElementById('transferBtn');
 
-            // The condition to hide the result and disable the button needs to be careful
-            // if totalVolume becomes 0 due to a sell-off.
             if (isNaN(totalValue) || isNaN(totalVolume) || (totalVolume === 0 && totalValue === 0)) {
                 resultBox.style.display = 'none';
                 transferBtn.disabled = true;
@@ -1153,35 +1065,118 @@
             } else {
                 resultBox.style.display = 'block';
                 transferBtn.disabled = false;
-                const weightedAverage = totalVolume !== 0 ? totalValue / totalVolume : 0; // Handle division by zero
-                weightedAverageResult.textContent = `$${formatNumber(weightedAverage, 4)}`;
+                const weightedAverage = totalVolume !== 0 ? totalValue / totalVolume : 0;
+                weightedAverageResult.textContent = `${formatNumber(weightedAverage, 4)}`;
                 totalValueSpan.textContent = formatNumber(totalValue, 2);
-                totalVolumeSpan.textContent = formatNumber(totalVolume, 0); // Volume as integer
+                totalVolumeSpan.textContent = formatNumber(totalVolume, 0);
             }
         }
 
         function transferToTarget() {
             const weightedAverageResultText = document.getElementById('weightedAverageResult').textContent;
+            const weightedAveragePrice = parseInput(weightedAverageResultText.replace('="text" id="price1" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 1 (units - Positive for Buy, Negative for Sell)</label>
+                        <input type="text" id="volume1" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
+                    </div>
+                </div>
 
-            // Use parseInput directly, it's now designed to handle various formats
-            const weightedAveragePrice = parseInput(weightedAverageResultText.replace('$', ''));
+                <div class="series-box series-2">
+                    <h3 class="series-title">Series 2 (Buy/Sell)</h3>
+                    <div class="input-group">
+                        <label>Price 2 ($)</label>
+                        <input type="text" id="price2" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 2 (units - Positive for Buy, Negative for Sell)</label>
+                        <input type="text" id="volume2" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box" id="resultBox" style="display: none;">
+                <div style="font-size: 1.2em; margin-bottom: 10px;">Volume Weighted Average Price:</div>
+                <div class="weighted-avg-price" id="weightedAverageResult">$0.0000</div>
+                <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    <div>Total Value: $<span id="totalValue">0</span></div>
+                    <div>Total Volume: <span id="totalVolume">0</span> units</div>
+                </div>
+            </div>
+
+            <div class="transfer-section">
+                <button class="transfer-btn" onclick="transferToTarget()" id="transferBtn" disabled>
+                    📤 Transfer to Target Price
+                </button>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <h2 class="notes-title">📊 Stock Notes</h2>
+            
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="stockSelect">Stock:</label>
+                    <div class="dropdown-container">
+                        <select id="stockSelect" onchange="checkCustomStock()">
+                            <option value="">Select stock...</option>
+                            <option value="CUSTOM">+ Add New Stock</option>
+                        </select>
+                        <input type="text" id="customStock" placeholder="Enter new stock..." style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addStockBtn" onclick="addNewStock()" style="display: none;">Add Stock</button>
+                        <button class="manage-btn" onclick="toggleStockManager()">Manage Stocks</button>
+                        <div id="stockManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Stocks:</h4>
+                            <div id="stockItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="currentInput">Current Price:</label>
+                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="calculatePercentageChange()" />
+                </div>
+                
+                <div class="input-group">
+                    <label for="targetInput">Target:</label>
+                    <input type="number" id="targetInput" class="target-input" placeholder="Enter target price" oninput="calculatePercentageChange()" />
+                </div>
+                
+                <div class="input-group">
+                    <label for="marginSelect">Margin Ratio:</label>
+                    <div class="dropdown-container">
+                        <select id="marginSelect" class="margin-select" onchange="checkCustomMargin(); calculateAvailable()">
+                            <option value="CUSTOM">+ Custom Margin</option>
+                        </select>
+                        <input type="number" id="customMargin" placeholder="Enter custom margin..." step="1" min="1" max="100" style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addMarginBtn" onclick="addCustomMargin()" style="display: none;">Add Margin</button>
+                        <button class="manage-btn" onclick="toggleMarginManager()">Manage Margins</button>
+                        <div id="marginManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Margins:</h4>
+                            <div id="marginItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="averagingUpSelect">Averaging Up Rate (%):</label>
+                    <div class="dropdown-container">
+                        <select id="averagingUpSelect" class="margin-select" onchange="checkCustomAveragingUp()">
+                            <option value="CUSTOM">+ Custom Rate</option>
+                        </select>
+                        <input type, ''));
 
             if (!isNaN(weightedAveragePrice) && weightedAveragePrice > 0) {
                 document.getElementById('targetInput').value = weightedAveragePrice.toFixed(2);
-                calculatePercentageChange(); // Recalculate based on new target
+                calculatePercentageChange();
                 showMessage('Weighted average transferred to Target Price.', 'success');
             } else {
-                // This will also catch cases where weightedAveragePrice is 0 or NaN
                 showMessage('Weighted average price must be a valid positive number to transfer.', 'error');
             }
         }
 
         // --- Notes Section Logic ---
-        let stockNotes = [];
-        let stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
-        let marginOptions = [20, 25, 30, 100];
-        let averagingUpOptions = [3, 5, 7, 10, 15];
-        let stopLossOptions = [5, 7, 10, 15, 20];
+        let sortDirection = {};
 
         function showMessage(message, type) {
             const statusMessage = document.getElementById('statusMessage');
@@ -1193,24 +1188,24 @@
         }
 
         function loadDropdownOptions() {
-            populateDropdown('stockSelect', stockOptions);
-            populateDropdown('marginSelect', marginOptions, '%');
-            populateDropdown('averagingUpSelect', averagingUpOptions, '%');
-            populateDropdown('stopLossSelect', stopLossOptions, '%');
+            populateDropdown('stockSelect', appData.stockOptions);
+            populateDropdown('marginSelect', appData.marginOptions, '%');
+            populateDropdown('averagingUpSelect', appData.averagingUpOptions, '%');
+            populateDropdown('stopLossSelect', appData.stopLossOptions, '%');
 
-            renderDropdownManager('stockItems', stockOptions, 'stockSelect', 'Stock');
-            renderDropdownManager('marginItems', marginOptions, 'marginSelect', 'Margin', '%');
-            renderDropdownManager('averagingUpItems', averagingUpOptions, 'averagingUpSelect', 'Avg Up', '%');
-            renderDropdownManager('stopLossItems', stopLossOptions, 'stopLossSelect', 'Stop Loss', '%');
+            renderDropdownManager('stockItems', appData.stockOptions, 'stockSelect', 'Stock');
+            renderDropdownManager('marginItems', appData.marginOptions, 'marginSelect', 'Margin', '%');
+            renderDropdownManager('averagingUpItems', appData.averagingUpOptions, 'averagingUpSelect', 'Avg Up', '%');
+            renderDropdownManager('stopLossItems', appData.stopLossOptions, 'stopLossSelect', 'Stop Loss', '%');
         }
 
         function populateDropdown(selectId, optionsArray, suffix = '') {
             const select = document.getElementById(selectId);
-            select.innerHTML = ''; // Clear existing options
+            select.innerHTML = '';
             if (selectId === 'stockSelect') {
                 select.add(new Option('Select stock...', ''));
             } else {
-                select.add(new Option('Select...', '')); // Default for other dropdowns
+                select.add(new Option('Select...', ''));
             }
             optionsArray.forEach(option => {
                 select.add(new Option(`${option}${suffix}`, option));
@@ -1225,16 +1220,15 @@
                 const div = document.createElement('div');
                 div.className = 'dropdown-item';
                 div.innerHTML = `<span>${item}${suffix}</span>
-                                <button class="remove-item-btn" onclick="removeItem('${selectId}', ${typeof item === 'string' ? `'${item}'` : item})">x</button>`; // Handle string vs number for removal
+                                <button class="remove-item-btn" onclick="removeItem('${selectId}', ${typeof item === 'string' ? `'${item}'` : item})">x</button>`;
                 container.appendChild(div);
             });
         }
 
         function addItem(selectId, inputValue, optionsArray, suffix = '', label) {
-            const value = parseInput(inputValue); // Use parseInput for consistency
+            const value = parseInput(inputValue);
             let itemToAdd = value;
 
-            // Special handling for stock: it's a string
             if (selectId === 'stockSelect') {
                 itemToAdd = inputValue.trim().toUpperCase();
                 if (!itemToAdd || optionsArray.includes(itemToAdd)) {
@@ -1250,7 +1244,6 @@
             
             optionsArray.push(itemToAdd);
             optionsArray.sort((a, b) => {
-                // Ensure correct sorting for numbers and strings
                 if (typeof a === 'string' && typeof b === 'string') {
                     return a.localeCompare(b);
                 }
@@ -1272,21 +1265,21 @@
             let label = '';
 
             if (selectId === 'stockSelect') {
-                optionsArray = stockOptions;
+                optionsArray = appData.stockOptions;
                 containerId = 'stockItems';
                 label = 'Stock';
             } else if (selectId === 'marginSelect') {
-                optionsArray = marginOptions;
+                optionsArray = appData.marginOptions;
                 containerId = 'marginItems';
                 label = 'Margin';
                 suffix = '%';
             } else if (selectId === 'averagingUpSelect') {
-                optionsArray = averagingUpOptions;
+                optionsArray = appData.averagingUpOptions;
                 containerId = 'averagingUpItems';
                 label = 'Averaging Up Rate';
                 suffix = '%';
             } else if (selectId === 'stopLossSelect') {
-                optionsArray = stopLossOptions;
+                optionsArray = appData.stopLossOptions;
                 containerId = 'stopLossItems';
                 label = 'Stop Loss Rate';
                 suffix = '%';
@@ -1317,7 +1310,7 @@
 
         function addNewStock() {
             const customInput = document.getElementById('customStock');
-            addItem('stockSelect', customInput.value, stockOptions, '', 'Stock');
+            addItem('stockSelect', customInput.value, appData.stockOptions, '', 'Stock');
         }
 
         function toggleStockManager() {
@@ -1325,7 +1318,6 @@
             manager.style.display = manager.style.display === 'none' ? 'block' : 'none';
         }
 
-        // Similar functions for Margin, Averaging Up, Stop Loss
         function checkCustomMargin() {
             const select = document.getElementById('marginSelect');
             const customInput = document.getElementById('customMargin');
@@ -1342,8 +1334,8 @@
 
         function addCustomMargin() {
             const customInput = document.getElementById('customMargin');
-            addItem('marginSelect', customInput.value, marginOptions, '%', 'Margin');
-            calculateAvailable(); // Recalculate after adding margin
+            addItem('marginSelect', customInput.value, appData.marginOptions, '%', 'Margin');
+            calculateAvailable();
         }
 
         function toggleMarginManager() {
@@ -1367,7 +1359,7 @@
 
         function addCustomAveragingUp() {
             const customInput = document.getElementById('customAveragingUp');
-            addItem('averagingUpSelect', customInput.value, averagingUpOptions, '%', 'Averaging Up Rate');
+            addItem('averagingUpSelect', customInput.value, appData.averagingUpOptions, '%', 'Averaging Up Rate');
         }
 
         function toggleAveragingUpManager() {
@@ -1391,7 +1383,7 @@
 
         function addCustomStopLoss() {
             const customInput = document.getElementById('customStopLoss');
-            addItem('stopLossSelect', customInput.value, stopLossOptions, '%', 'Stop Loss Rate');
+            addItem('stopLossSelect', customInput.value, appData.stopLossOptions, '%', 'Stop Loss Rate');
         }
 
         function toggleStopLossManager() {
@@ -1419,7 +1411,7 @@
             } else {
                 percentageInput.className = 'percentage-input down-percentage';
             }
-            calculateAvailable(); // Recalculate available based on potential percentage change
+            calculateAvailable();
         }
 
         function calculateAvailable() {
@@ -1430,8 +1422,6 @@
             if (!isNaN(investmentAmount) && investmentAmount > 0 && !isNaN(marginRatio) && marginRatio > 0) {
                 availableAmount = (investmentAmount / (marginRatio / 100)) - investmentAmount;
             }
-            // This part of `calculateAvailable` is meant for notes. 
-            // It doesn't directly affect the weighted average calculation, but it's good to keep it for the notes section.
         }
 
         function addNote() {
@@ -1455,24 +1445,23 @@
             const available = (investmentAmount / (margin / 100)) - investmentAmount;
 
             const note = {
-                id: Date.now(), // Unique ID for each note
+                id: Date.now(),
                 dateTime,
                 stock,
                 current,
                 target,
                 percentageChange,
-                margin, // Renamed from marginRatio for consistency
-                available, // Renamed from availableToInvest for consistency
+                margin,
+                available,
                 investmentAmount,
                 averagingUpRate,
                 stopLossRate,
-                investmentPlan: [], // To store calculated investment steps
-                exitPlan: [] // To store calculated exit steps
+                investmentPlan: [],
+                exitPlan: []
             };
 
-            stockNotes.push(note);
+            appData.stockNotes.push(note);
             renderNotesTable();
-            saveData();
             clearInputs();
             showMessage('Stock note added successfully!', 'success');
         }
@@ -1480,20 +1469,19 @@
         function renderNotesTable() {
             const tableBody = document.getElementById('notesTable');
             tableBody.innerHTML = '';
-            document.getElementById('totalCount').textContent = stockNotes.length;
+            document.getElementById('totalCount').textContent = appData.stockNotes.length;
 
-            stockNotes.forEach(note => {
+            appData.stockNotes.forEach(note => {
                 const row = tableBody.insertRow();
                 row.setAttribute('data-id', note.id);
 
                 row.insertCell().textContent = note.dateTime;
 
-                // Make the stock name clickable
                 const stockCell = row.insertCell();
                 const stockSpan = document.createElement('span');
                 stockSpan.textContent = note.stock;
-                stockSpan.classList.add('clickable-stock'); // Add a class for styling/identification
-                stockSpan.onclick = () => loadNoteIntoInputs(note.id); // Call new function on click
+                stockSpan.classList.add('clickable-stock');
+                stockSpan.onclick = () => loadNoteIntoInputs(note.id);
                 stockCell.appendChild(stockSpan);
                 
                 row.insertCell().textContent = formatNumber(note.current, 2);
@@ -1507,7 +1495,7 @@
                 row.insertCell().classList.add('margin-cell');
                 row.insertCell().textContent = `${note.margin}%`;
                 row.insertCell().classList.add('available-cell');
-                row.insertCell().textContent = `$${formatNumber(note.available, 2)}`;
+                row.insertCell().textContent = `${formatNumber(note.available, 2)}`;
 
                 const planButtonCell = row.insertCell();
                 const planButton = document.createElement('button');
@@ -1526,9 +1514,8 @@
         }
 
         function deleteNote(id) {
-            stockNotes = stockNotes.filter(note => note.id !== id);
+            appData.stockNotes = appData.stockNotes.filter(note => note.id !== id);
             renderNotesTable();
-            saveData();
             showMessage('Stock note deleted.', 'success');
         }
 
@@ -1537,13 +1524,12 @@
             document.getElementById('currentInput').value = '';
             document.getElementById('targetInput').value = '';
             document.getElementById('percentageInput').value = '';
-            document.getElementById('percentageInput').className = 'percentage-input'; // Reset class
-            document.getElementById('marginSelect').value = '20'; // Reset to default
-            document.getElementById('averagingUpSelect').value = '3'; // Reset to default
-            document.getElementById('stopLossSelect').value = '5'; // Reset to default
+            document.getElementById('percentageInput').className = 'percentage-input';
+            document.getElementById('marginSelect').value = '20';
+            document.getElementById('averagingUpSelect').value = '3';
+            document.getElementById('stopLossSelect').value = '5';
             document.getElementById('investmentInput').value = '';
 
-            // Hide custom input fields and their add buttons
             document.getElementById('customStock').style.display = 'none';
             document.getElementById('addStockBtn').style.display = 'none';
             document.getElementById('customMargin').style.display = 'none';
@@ -1555,61 +1541,42 @@
         }
 
         function saveData() {
-            localStorage.setItem('stockNotes', JSON.stringify(stockNotes));
-            localStorage.setItem('stockOptions', JSON.stringify(stockOptions));
-            localStorage.setItem('marginOptions', JSON.stringify(marginOptions));
-            localStorage.setItem('averagingUpOptions', JSON.stringify(averagingUpOptions));
-            localStorage.setItem('stopLossOptions', JSON.stringify(stopLossOptions));
-            showMessage('Data saved to local storage!', 'success');
+            const dataToSave = {
+                stockNotes: appData.stockNotes,
+                stockOptions: appData.stockOptions,
+                marginOptions: appData.marginOptions,
+                averagingUpOptions: appData.averagingUpOptions,
+                stopLossOptions: appData.stopLossOptions,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stock-notes-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('Data downloaded as JSON file!', 'success');
         }
 
         function loadNotes() {
-            const savedNotes = localStorage.getItem('stockNotes');
-            if (savedNotes) {
-                stockNotes = JSON.parse(savedNotes);
-                // Ensure default investmentPlan and exitPlan if not present from older saves
-                stockNotes.forEach(note => {
-                    if (!note.investmentPlan) note.investmentPlan = [];
-                    if (!note.exitPlan) note.exitPlan = [];
-                });
-                renderNotesTable();
-                showMessage('Notes loaded from local storage.', 'success');
-            }
-
-            const savedStocks = localStorage.getItem('stockOptions');
-            if (savedStocks) {
-                stockOptions = JSON.parse(savedStocks);
-            }
-            const savedMargins = localStorage.getItem('marginOptions');
-            if (savedMargins) {
-                marginOptions = JSON.parse(savedMargins);
-            }
-            const savedAveragingUp = localStorage.getItem('averagingUpOptions');
-            if (savedAveragingUp) {
-                averagingUpOptions = JSON.parse(savedAveragingUp);
-            }
-            const savedStopLoss = localStorage.getItem('stopLossOptions');
-            if (savedStopLoss) {
-                stopLossOptions = JSON.parse(savedStopLoss);
-            }
-            loadDropdownOptions(); // Reload dropdowns with saved options
+            renderNotesTable();
+            showMessage('Application loaded successfully.', 'success');
         }
 
         function clearAll() {
             if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                stockNotes = [];
+                appData.stockNotes = [];
+                appData.stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
+                appData.marginOptions = [20, 25, 30, 100];
+                appData.averagingUpOptions = [3, 5, 7, 10, 15];
+                appData.stopLossOptions = [5, 7, 10, 15, 20];
                 renderNotesTable();
-                localStorage.removeItem('stockNotes');
-                // Reset dropdown options to default
-                stockOptions = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA'];
-                marginOptions = [20, 25, 30, 100];
-                averagingUpOptions = [3, 5, 7, 10, 15];
-                stopLossOptions = [5, 7, 10, 15, 20];
-                localStorage.removeItem('stockOptions');
-                localStorage.removeItem('marginOptions');
-                localStorage.removeItem('averagingUpOptions');
-                localStorage.removeItem('stopLossOptions');
-                loadDropdownOptions(); // Re-populate with default options
+                loadDropdownOptions();
                 clearInputs();
                 showMessage('All data cleared!', 'success');
             }
@@ -1623,384 +1590,116 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         let uploadedNotes = [];
-                        let newStockOptions = new Set(stockOptions);
-                        let newMarginOptions = new Set(marginOptions);
-                        let newAveragingUpOptions = new Set(averagingUpOptions);
-                        let newStopLossOptions = new Set(stopLossOptions);
+                        let newStockOptions = new Set(appData.stockOptions);
+                        let newMarginOptions = new Set(appData.marginOptions);
+                        let newAveragingUpOptions = new Set(appData.averagingUpOptions);
+                        let newStopLossOptions = new Set(appData.stopLossOptions);
 
-                        // Check for 'notes' or 'stockNotes' key
-                        const sourceNotes = data.notes || data.stockNotes; 
+                        const sourceNotes = data.notes || data.stockNotes;
 
                         if (sourceNotes && Array.isArray(sourceNotes)) {
                             uploadedNotes = sourceNotes.map(note => {
-                                // Map keys from the uploaded JSON to the expected keys
                                 const mappedNote = {
-                                    id: note.id || Date.now() + Math.random(), // Ensure unique ID
-                                    dateTime: note.datetime || new Date().toLocaleString(), // Handle datetime
+                                    id: note.id || Date.now() + Math.random(),
+                                    dateTime: note.datetime || new Date().toLocaleString(),
                                     stock: note.stock,
                                     current: note.current,
                                     target: note.target,
-                                    percentageChange: note.percentage, // Map 'percentage' to 'percentageChange'
-                                    margin: note.marginRatio || note.margin, // Map 'marginRatio' or 'margin'
-                                    available: note.availableToInvest || note.available, // Map 'availableToInvest' or 'available'
+                                    percentageChange: note.percentage || note.percentageChange,
+                                    margin: note.marginRatio || note.margin,
+                                    available: note.availableToInvest || note.available,
                                     investmentAmount: note.investmentAmount,
                                     averagingUpRate: note.averagingUpRate,
                                     stopLossRate: note.stopLossRate,
-                                    investmentPlan: note.investmentPlan || [], // Keep existing or default
-                                    exitPlan: note.exitPlan || [] // Keep existing or default
-                                };
-                                // Add stock to options if new
-                                if (mappedNote.stock && !stockOptions.includes(mappedNote.stock)) {
-                                    newStockOptions.add(mappedNote.stock);
-                                }
-                                // Add margin to options if new
-                                if (mappedNote.margin && !marginOptions.includes(mappedNote.margin)) {
-                                    newMarginOptions.add(mappedNote.margin);
-                                }
-                                // Add averagingUpRate to options if new
-                                if (mappedNote.averagingUpRate && !averagingUpOptions.includes(mappedNote.averagingUpRate)) {
-                                    newAveragingUpOptions.add(mappedNote.averagingUpRate);
-                                }
-                                // Add stopLossRate to options if new
-                                if (mappedNote.stopLossRate && !stopLossOptions.includes(mappedNote.stopLossRate)) {
-                                    newStopLossOptions.add(mappedNote.stopLossRate);
-                                }
-                                return mappedNote;
-                            });
+                                    investmentPlan: note.investmentPlan || [],
+                                    ="text" id="price1" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 1 (units - Positive for Buy, Negative for Sell)</label>
+                        <input type="text" id="volume1" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
+                    </div>
+                </div>
 
-                            stockNotes = uploadedNotes; // Replace current notes with uploaded ones
+                <div class="series-box series-2">
+                    <h3 class="series-title">Series 2 (Buy/Sell)</h3>
+                    <div class="input-group">
+                        <label>Price 2 ($)</label>
+                        <input type="text" id="price2" class="calculator-input" placeholder="0.00" oninput="calculateWeightedAverage()">
+                    </div>
+                    <div class="input-group">
+                        <label>Volume 2 (units - Positive for Buy, Negative for Sell)</label>
+                        <input type="text" id="volume2" class="calculator-input" placeholder="0" oninput="calculateWeightedAverage()">
+                    </div>
+                </div>
+            </div>
 
-                            // Update dropdown options, convert Sets back to sorted Arrays
-                            stockOptions = Array.from(newStockOptions).sort((a,b) => a.localeCompare(b));
-                            marginOptions = Array.from(newMarginOptions).sort((a,b) => a - b);
-                            averagingUpOptions = Array.from(newAveragingUpOptions).sort((a,b) => a - b);
-                            stopLossOptions = Array.from(newStopLossOptions).sort((a,b) => a - b);
+            <div class="result-box" id="resultBox" style="display: none;">
+                <div style="font-size: 1.2em; margin-bottom: 10px;">Volume Weighted Average Price:</div>
+                <div class="weighted-avg-price" id="weightedAverageResult">$0.0000</div>
+                <div style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                    <div>Total Value: $<span id="totalValue">0</span></div>
+                    <div>Total Volume: <span id="totalVolume">0</span> units</div>
+                </div>
+            </div>
 
+            <div class="transfer-section">
+                <button class="transfer-btn" onclick="transferToTarget()" id="transferBtn" disabled>
+                    📤 Transfer to Target Price
+                </button>
+            </div>
+        </div>
 
-                            renderNotesTable();
-                            loadDropdownOptions(); // Re-populate dropdowns with updated options
-                            saveData(); // Save uploaded data to local storage
-                            showMessage('Data uploaded and loaded successfully!', 'success');
-                        } else {
-                            showMessage('Invalid JSON file format. Expected "notes" or "stockNotes" array.', 'error');
-                        }
-                    } catch (error) {
-                        showMessage('Error parsing JSON file: ' + error.message, 'error');
-                    }
-                };
-                reader.readAsText(file);
-            } else {
-                showMessage('No file selected.', 'error');
-            }
-        }
-
-        let sortDirection = {}; // To keep track of sort direction for each column
-        function sortBy(column) {
-            const currentSortDir = sortDirection[column] || 'asc';
-            const newSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
-
-            stockNotes.sort((a, b) => {
-                let valA, valB;
-                if (column === 'stock') {
-                    valA = a.stock.toLowerCase();
-                    valB = b.stock.toLowerCase();
-                } else if (column === 'percentage') {
-                    valA = a.percentageChange;
-                    valB = b.percentageChange;
-                } else if (column === 'available') {
-                    valA = a.available;
-                    valB = b.available;
-                }
-
-                if (valA < valB) return newSortDir === 'asc' ? -1 : 1;
-                if (valA > valB) return newSortDir === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            sortDirection[column] = newSortDir;
-            updateSortButtonText(column, newSortDir);
-            renderNotesTable();
-        }
-
-        function updateSortButtonText(activeColumn, direction) {
-            ['stock', 'percentage', 'available'].forEach(col => {
-                const btn = document.getElementById(`sort${col.charAt(0).toUpperCase() + col.slice(1)}`);
-                btn.classList.remove('active');
-                let arrow = '↕';
-                if (col === activeColumn) {
-                    btn.classList.add('active');
-                    arrow = direction === 'asc' ? '▲' : '▼';
-                }
-                btn.textContent = `${col.charAt(0).toUpperCase() + col.slice(1)} ${arrow}`;
-            });
-        }
-
-        // Function to load note data into input fields
-        function loadNoteIntoInputs(noteId) {
-            const noteToLoad = stockNotes.find(note => note.id === noteId);
-
-            if (noteToLoad) {
-                // Populate the dropdowns first to ensure options are available
-                document.getElementById('stockSelect').value = noteToLoad.stock;
-                // Ensure custom stock field is hidden if a standard stock is selected
-                checkCustomStock();
-
-                document.getElementById('marginSelect').value = noteToLoad.margin;
-                checkCustomMargin(); // Hide custom margin field if standard margin selected
-
-                document.getElementById('averagingUpSelect').value = noteToLoad.averagingUpRate;
-                checkCustomAveragingUp(); // Hide custom avg up field if standard rate selected
-
-                document.getElementById('stopLossSelect').value = noteToLoad.stopLossRate;
-                checkCustomStopLoss(); // Hide custom stop loss field if standard rate selected
-
-                // Populate the input fields
-                document.getElementById('currentInput').value = noteToLoad.current;
-                document.getElementById('targetInput').value = noteToLoad.target;
-                document.getElementById('investmentInput').value = noteToLoad.investmentAmount;
-
-                // Recalculate percentage change based on loaded current and target
-                calculatePercentageChange();
-
-                showMessage(`Note for ${noteToLoad.stock} loaded into inputs.`, 'success');
-
-                // You might want to scroll to the top of the notes section for better UX
-                document.querySelector('.notes-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            } else {
-                showMessage('Error: Could not find the selected note.', 'error');
-            }
-        }
-
-        // --- Investment Planning Modal Functions ---
-        let currentModalNoteId = null;
-
-        function openInvestmentModal(noteId) {
-            currentModalNoteId = noteId;
-            const note = stockNotes.find(n => n.id === noteId);
-            if (!note) {
-                showMessage('Note not found for investment plan.', 'error');
-                return;
-            }
-
-            document.getElementById('modalStockName').textContent = note.stock;
+        <div class="notes-section">
+            <h2 class="notes-title">📊 Stock Notes</h2>
             
-            // Recalculate and display overall position (important if inputs were changed)
-            calculateOverallPosition(note);
-
-            // Populate Investment Plan (re-generates if empty, or just renders existing)
-            populateInvestmentPlan(note);
-
-            // Populate Exit Plan (re-generates if empty, or just renders existing)
-            populateExitPlan(note);
-
-            // Update Progress Bar
-            updateInvestmentProgressBar();
-
-            document.getElementById('investmentModal').style.display = 'block';
-        }
-
-        function closeInvestmentModal() {
-            document.getElementById('investmentModal').style.display = 'none';
-            currentModalNoteId = null;
-        }
-
-        function calculateOverallPosition(note) {
-            let totalInvestedValue = 0;
-            let totalInvestedVolume = 0;
-
-            note.investmentPlan.forEach(step => {
-                if (step.status === 'completed') {
-                    totalInvestedValue += step.amount;
-                    totalInvestedVolume += step.quantity;
-                }
-            });
-
-            // Account for any sales from the exit plan
-            note.exitPlan.forEach(step => {
-                if (step.status === 'exited') {
-                    // For exit steps, subtract the volume and value as they represent shares sold
-                    totalInvestedValue -= step.amount; 
-                    totalInvestedVolume -= step.quantity; 
-                }
-            });
-
-            const currentWeightedAverage = totalInvestedVolume > 0 ? totalInvestedValue / totalInvestedVolume : 0;
-            document.getElementById('currentOverallVolume').textContent = formatNumber(totalInvestedVolume, 0);
-            document.getElementById('currentWeightedAveragePrice').textContent = `$${formatNumber(currentWeightedAverage, 4)}`;
-        }
-
-        function populateInvestmentPlan(note) {
-            const tableBody = document.getElementById('investmentPlanTableBody');
-            tableBody.innerHTML = '';
-            
-            let currentPrice = note.current;
-            const averagingUpRate = note.averagingUpRate / 100; // Convert to decimal
-            const investmentAmount = note.investmentAmount;
-
-            // Generate initial plan if it doesn't exist or is empty, AND there's an investment amount
-            if (note.investmentPlan.length === 0 && investmentAmount > 0 && currentPrice > 0) {
-                let plannedBuys = 3; 
-                let amountPerBuy = investmentAmount / plannedBuys;
-
-                for (let i = 0; i < plannedBuys; i++) {
-                    // This creates price levels going down for "averaging down" behavior,
-                    // or for buying at the current price and subsequent dips.
-                    let priceLevel = currentPrice * (1 - (averagingUpRate * i));
-                    if (priceLevel <= 0) priceLevel = 0.01; // Ensure price is never zero or negative
-
-                    const quantity = amountPerBuy > 0 && priceLevel > 0 ? amountPerBuy / priceLevel : 0;
-                    
-                    const step = {
-                        price: priceLevel,
-                        quantity: quantity,
-                        amount: amountPerBuy,
-                        status: 'pending' 
-                    };
-                    note.investmentPlan.push(step);
-                }
-                note.investmentPlan.sort((a, b) => b.price - a.price); // Sort descending by price
-                saveData(); // Save the newly generated plan
-            }
-
-            // Render the plan
-            note.investmentPlan.forEach((step, index) => {
-                const row = tableBody.insertRow();
-                const checkboxCell = row.insertCell();
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = step.status === 'completed';
-                checkbox.onchange = () => toggleInvestmentStatus(note.id, index, checkbox.checked);
-                checkboxCell.appendChild(checkbox);
-
-                row.insertCell().classList.add('price-level');
-                row.cells[1].textContent = `$${formatNumber(step.price, 2)}`;
-                row.insertCell().textContent = formatNumber(step.quantity, 0);
-                row.insertCell().classList.add('investment-amount');
-                row.cells[3].textContent = `$${formatNumber(step.amount, 2)}`;
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="stockSelect">Stock:</label>
+                    <div class="dropdown-container">
+                        <select id="stockSelect" onchange="checkCustomStock()">
+                            <option value="">Select stock...</option>
+                            <option value="CUSTOM">+ Add New Stock</option>
+                        </select>
+                        <input type="text" id="customStock" placeholder="Enter new stock..." style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addStockBtn" onclick="addNewStock()" style="display: none;">Add Stock</button>
+                        <button class="manage-btn" onclick="toggleStockManager()">Manage Stocks</button>
+                        <div id="stockManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Stocks:</h4>
+                            <div id="stockItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
+                </div>
                 
-                const statusCell = row.insertCell();
-                statusCell.className = `investment-status status-${step.status}`;
-                statusCell.textContent = step.status;
-            });
-            calculateOverallPosition(note); // Recalculate after updating plan
-        }
-
-        function toggleInvestmentStatus(noteId, stepIndex, isChecked) {
-            const note = stockNotes.find(n => n.id === noteId);
-            if (note && note.investmentPlan[stepIndex]) {
-                note.investmentPlan[stepIndex].status = isChecked ? 'completed' : 'pending';
-                saveData();
-                populateInvestmentPlan(note); // Re-render to update UI
-                updateInvestmentProgressBar();
-                calculateOverallPosition(note); // Recalculate overall position
-                showMessage(`Investment step ${isChecked ? 'completed' : 'marked pending'}.`, 'success');
-            }
-        }
-
-        function populateExitPlan(note) {
-            const tableBody = document.getElementById('exitPlanTableBody');
-            tableBody.innerHTML = '';
-
-            let currentPrice = note.current;
-            const stopLossRate = note.stopLossRate / 100; // Convert to decimal
-
-            // Get total invested volume from completed investment steps
-            const totalInvestedVolume = note.investmentPlan.reduce((sum, step) => sum + (step.status === 'completed' ? step.quantity : 0), 0);
-
-            // Re-generate exit plan if it's empty OR if the totalInvestedVolume has changed (meaning buys happened)
-            // This ensures the exit plan is always based on the current completed buy volume.
-            if (totalInvestedVolume > 0 && (note.exitPlan.length === 0 || 
-                note.exitPlan.reduce((sum, step) => sum + step.quantity, 0) !== totalInvestedVolume)) {
+                <div class="input-group">
+                    <label for="currentInput">Current Price:</label>
+                    <input type="number" id="currentInput" placeholder="0.00" step="0.01" oninput="calculatePercentageChange()" />
+                </div>
                 
-                note.exitPlan = []; // Clear old plan if volume changed or it's empty
-                let plannedSells = 3; 
-                let volumePerSell = totalInvestedVolume / plannedSells;
-
-                for (let i = 0; i < plannedSells; i++) {
-                    // This generates price levels going up from current for profit taking
-                    let priceLevel = currentPrice * (1 + (stopLossRate * (i + 1))); // Start from 1 for profit
-                    if (priceLevel <= 0) priceLevel = 0.01; // Ensure price is never zero or negative
-
-                    const amount = volumePerSell * priceLevel; 
-                    
-                    const step = {
-                        price: priceLevel,
-                        quantity: volumePerSell, 
-                        amount: amount,
-                        status: 'pending' 
-                    };
-                    note.exitPlan.push(step);
-                }
-                note.exitPlan.sort((a, b) => a.price - b.price); // Sort ascending by price
-                saveData(); // Save the newly generated plan
-            }
-
-
-            let currentRemainingVolume = totalInvestedVolume; // Start with total bought volume
-            let currentRemainingValue = note.investmentPlan.reduce((sum, step) => sum + (step.status === 'completed' ? step.amount : 0), 0);
-
-            note.exitPlan.forEach((step, index) => {
-                const row = tableBody.insertRow();
-                const checkboxCell = row.insertCell();
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = step.status === 'exited';
-                checkbox.onchange = () => toggleExitStatus(note.id, index, checkbox.checked);
-                checkboxCell.appendChild(checkbox);
-
-                row.insertCell().classList.add('price-level');
-                row.cells[1].textContent = `$${formatNumber(step.price, 2)}`;
-                row.insertCell().textContent = formatNumber(step.quantity, 0); // Display positive volume here
-                row.insertCell().classList.add('exit-amount');
-                row.cells[3].textContent = `$${formatNumber(step.amount, 2)}`;
+                <div class="input-group">
+                    <label for="targetInput">Target:</label>
+                    <input type="number" id="targetInput" class="target-input" placeholder="Enter target price" oninput="calculatePercentageChange()" />
+                </div>
                 
-                const statusCell = row.insertCell();
-                statusCell.className = `investment-status status-${step.status}`;
-                statusCell.textContent = step.status;
-
-                if (step.status === 'exited') {
-                    currentRemainingVolume -= step.quantity;
-                    currentRemainingValue -= step.amount;
-                }
-            });
-
-            document.getElementById('remainingExitVolume').textContent = formatNumber(currentRemainingVolume, 0);
-            document.getElementById('remainingExitValue').textContent = `$${formatNumber(currentRemainingValue, 2)}`;
-            
-            calculateOverallPosition(note); // Recalculate after updating plan
-        }
-
-        function toggleExitStatus(noteId, stepIndex, isChecked) {
-            const note = stockNotes.find(n => n.id === noteId);
-            if (note && note.exitPlan[stepIndex]) {
-                note.exitPlan[stepIndex].status = isChecked ? 'exited' : 'pending';
-                saveData();
-                populateExitPlan(note); // Re-render to update UI and remaining position
-                updateInvestmentProgressBar(); // Progress bar reflects investment completion
-                calculateOverallPosition(note); // Recalculate overall position
-                showMessage(`Exit step ${isChecked ? 'completed' : 'marked pending'}.`, 'success');
-            }
-        }
-
-        function updateInvestmentProgressBar() {
-            const note = stockNotes.find(n => n.id === currentModalNoteId);
-            if (!note) return;
-
-            const totalInvestmentSteps = note.investmentPlan.length;
-            const completedInvestmentSteps = note.investmentPlan.filter(step => step.status === 'completed').length;
-            
-            let progress = 0;
-            if (totalInvestmentSteps > 0) {
-                progress = (completedInvestmentSteps / totalInvestmentSteps) * 100;
-            }
-
-            document.getElementById('investmentProgressBar').style.width = `${progress}%`;
-            document.getElementById('investmentProgressText').textContent = `${progress.toFixed(0)}% Completed`;
-        }
-
-        // Initial load of notes and dropdowns
-        loadNotes();
-    </script>
-</body>
-</html>
+                <div class="input-group">
+                    <label for="marginSelect">Margin Ratio:</label>
+                    <div class="dropdown-container">
+                        <select id="marginSelect" class="margin-select" onchange="checkCustomMargin(); calculateAvailable()">
+                            <option value="CUSTOM">+ Custom Margin</option>
+                        </select>
+                        <input type="number" id="customMargin" placeholder="Enter custom margin..." step="1" min="1" max="100" style="display: none; margin-top: 5px;">
+                        <button class="add-new-btn" id="addMarginBtn" onclick="addCustomMargin()" style="display: none;">Add Margin</button>
+                        <button class="manage-btn" onclick="toggleMarginManager()">Manage Margins</button>
+                        <div id="marginManager" class="dropdown-manager" style="display: none;">
+                            <h4>Current Margins:</h4>
+                            <div id="marginItems" class="dropdown-items"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="averagingUpSelect">Averaging Up Rate (%):</label>
+                    <div class="dropdown-container">
+                        <select id="averagingUpSelect" class="margin-select" onchange="checkCustomAveragingUp()">
+                            <option value="CUSTOM">+ Custom Rate</option>
+                        </select>
+                        <input type
